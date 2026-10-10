@@ -66,14 +66,16 @@ import java.time.format.TextStyle
 @Composable
 fun CalendarRoute(
     onOpenDay: (LocalDate) -> Unit,
+    onOpenJournal: (LocalDate) -> Unit = onOpenDay,
     initialDate: LocalDate? = null,
+    openJournalInitially: Boolean = false,
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(initialDate) {
         initialDate?.let {
             viewModel.selectDateAndShow(it)
-            onOpenDay(it)
+            if (openJournalInitially) onOpenJournal(it) else onOpenDay(it)
         }
     }
     var selectedTab by remember { mutableStateOf(CalendarTab.CALENDAR) }

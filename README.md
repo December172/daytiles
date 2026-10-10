@@ -52,7 +52,7 @@ Implemented in this milestone:
 
 ### Milestone 5 — Home screen widgets (complete)
 
-- Provide three independent widgets: scrollable todo list, compact task agenda, and small month view
+- Provide three independent widgets: scrollable todo list, daily journal input, and small month view
 - Let users check off todo items directly from the list widget
 - Support optional local reminder alarms for tasks and show reminder times in the list widget
 - Refresh all widgets after task edits and preserve reminders across device restarts
@@ -60,7 +60,7 @@ Implemented in this milestone:
 Implemented in this milestone:
 
 - Scrollable todo widget containing every open task, checkbox actions, due dates, and optional reminder times
-- Resizable task agenda widget with a compact date header and the next open tasks
+- Daily journal widget with today's note preview and a one-tap focused editor
 - Small current-month widget with localized weekday headings and today's date highlighted
 - Optional task reminders with Android notification permission handling and reboot rescheduling
 - Shared widget refresh after task creation, completion changes, reminder changes, title edits, and deletion
@@ -74,7 +74,7 @@ Implemented in this milestone:
 
 Started in this milestone:
 
-- Add localized Today and Overdue affordances to the task overview and both task widgets
+- Add localized Today and Overdue affordances to the task overview and todo list widget
 - Add an accessibility description to todo-widget completion controls
 
 ## Requirements

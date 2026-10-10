@@ -13,14 +13,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val openDate = intent.getStringExtra(EXTRA_OPEN_DATE)
+        val openJournal = intent.getBooleanExtra(EXTRA_OPEN_JOURNAL, false)
         setContent {
             DayTilesTheme {
-                AppNavigation(initialDate = openDate?.let(LocalDate::parse))
+                AppNavigation(initialDate = openDate?.let(LocalDate::parse), openJournal = openJournal)
             }
         }
     }
 
     companion object {
         const val EXTRA_OPEN_DATE = "com.december172.daytiles.OPEN_DATE"
+        const val EXTRA_OPEN_JOURNAL = "com.december172.daytiles.OPEN_JOURNAL"
     }
 }

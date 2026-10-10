@@ -38,11 +38,13 @@
     <string name="tasks_tab">待办</string>
     <string name="no_tasks_this_month">本月还没有待办事项。</string>
     <string name="open_day">打开日期</string>
-    <string name="widget_name">DayTiles 待办</string>
-    <string name="widget_description">紧凑显示接下来的待办事项</string>
+    <string name="widget_name">DayTiles 每日笔记</string>
+    <string name="widget_description">查看并编辑今天的日记</string>
     <string name="widget_loading">正在加载待办……</string>
     <string name="widget_no_tasks">暂无待办事项。</string>
     <string name="widget_add_task">+ 添加</string>
+    <string name="journal_widget_edit">写下今天的笔记</string>
+    <string name="journal_widget_empty">点按即可记录今天。</string>
     <string name="widget_refresh">刷新</string>
     <string name="todo_widget_name">DayTiles 待办清单</string>
     <string name="todo_widget_description">显示全部未完成事项、勾选框和提醒</string>

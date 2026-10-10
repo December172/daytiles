@@ -18,6 +18,7 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -57,6 +58,9 @@ class DayRepository(
     fun observeJournals(date: LocalDate): Flow<List<JournalEntryEntity>> =
         journalDao.observeForDate(date)
 
+    suspend fun journalFor(date: LocalDate): String =
+        journalDao.observeForDate(date).first().firstOrNull()?.content.orEmpty()
+
     fun observeTasks(date: LocalDate): Flow<List<TaskEntity>> = taskDao.observeForDate(date)
 
     fun observeStickers(month: YearMonth): Flow<List<StickerPlacementWithAsset>> =
@@ -70,12 +74,15 @@ class DayRepository(
     suspend fun saveJournal(entry: JournalEntryEntity): Long {
         if (entry.content.isBlank()) {
             if (entry.id != 0L) journalDao.deleteById(entry.id)
+            appContext?.let(DayTilesWidgetProvider::refreshJournal)
             return 0
         }
-        return if (entry.id == 0L) journalDao.insert(entry) else {
+        val savedId = if (entry.id == 0L) journalDao.insert(entry) else {
             journalDao.update(entry)
             entry.id
         }
+        appContext?.let(DayTilesWidgetProvider::refreshJournal)
+        return savedId
     }
 
     suspend fun addTask(date: LocalDate, title: String) {

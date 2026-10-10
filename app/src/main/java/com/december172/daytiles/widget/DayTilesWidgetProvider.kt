@@ -25,6 +25,12 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        fun refreshJournal(context: Context) {
+            val manager = AppWidgetManager.getInstance(context)
+            val component = ComponentName(context, DayTilesWidgetProvider::class.java)
+            manager.getAppWidgetIds(component).forEach { updateWidget(context, manager, it) }
+        }
+
         fun refresh(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
             listOf(
@@ -55,29 +61,38 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
             )
         }
 
+        internal fun journalOpenIntent(context: Context, date: LocalDate, requestCode: Int): PendingIntent {
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(MainActivity.EXTRA_OPEN_DATE, date.toString())
+                putExtra(MainActivity.EXTRA_OPEN_JOURNAL, true)
+            }
+            return PendingIntent.getActivity(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
         private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_daytiles)
             val today = LocalDate.now()
             val locale = locale(context)
-            views.setTextViewText(R.id.widget_month, today.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale)))
-            views.setTextViewText(R.id.widget_today, today.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)))
-            views.setTextViewText(R.id.widget_tasks, context.getString(R.string.widget_loading))
-            views.setOnClickPendingIntent(R.id.widget_root, dayOpenIntent(context, today, 1000 + widgetId))
-            views.setOnClickPendingIntent(R.id.widget_add_task, dayOpenIntent(context, today, 3000 + widgetId))
+            views.setTextViewText(R.id.journal_widget_title, context.getString(R.string.journal_heading))
+            views.setTextViewText(R.id.journal_widget_date, today.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)))
+            views.setTextViewText(R.id.journal_widget_preview, context.getString(R.string.widget_loading))
+            val openJournal = journalOpenIntent(context, today, 1000 + widgetId)
+            views.setOnClickPendingIntent(R.id.journal_widget_root, openJournal)
+            views.setOnClickPendingIntent(R.id.journal_widget_edit, openJournal)
             manager.updateAppWidget(widgetId, views)
             CoroutineScope(Dispatchers.IO).launch {
-                runCatching { (context.applicationContext as DayTilesApplication).repository.recentOpenTasks() }
-                    .onSuccess { tasks ->
-                        val taskText = tasks.take(3).joinToString("\n") { task ->
-                            val date = task.date.format(DateTimeFormatter.ofPattern("MMM d", locale))
-                            val state = when {
-                                task.date.isBefore(today) -> context.getString(R.string.task_overdue)
-                                task.date == today -> context.getString(R.string.task_due_today)
-                                else -> null
-                            }
-                            "○  ${state?.let { "$it · " }.orEmpty()}$date  ${task.title}"
-                        }.ifEmpty { context.getString(R.string.widget_no_tasks) }
-                        views.setTextViewText(R.id.widget_tasks, taskText)
+                runCatching { (context.applicationContext as DayTilesApplication).repository.journalFor(today) }
+                    .onSuccess { journal ->
+                        views.setTextViewText(
+                            R.id.journal_widget_preview,
+                            journal.ifBlank { context.getString(R.string.journal_widget_empty) },
+                        )
                         manager.updateAppWidget(widgetId, views)
                     }
             }
