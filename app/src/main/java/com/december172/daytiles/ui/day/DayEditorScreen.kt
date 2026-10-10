@@ -44,6 +44,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.app.TimePickerDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import java.time.ZoneId
+import java.util.Calendar
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
@@ -65,6 +72,12 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var pendingReminder by remember { mutableStateOf<Pair<TaskEntity, Long?>?>(null) }
+    val notificationPermission = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        val pending = pendingReminder
+        pendingReminder = null
+        if (granted && pending != null) viewModel.setTaskReminder(pending.first, pending.second)
+    }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { viewModel.importImageSticker(context, it) }
     }
@@ -75,6 +88,16 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onAddTask = viewModel::addTask,
         onUpdateTaskTitle = viewModel::updateTaskTitle,
         onTaskCompletedChanged = viewModel::setTaskCompleted,
+        onSetTaskReminder = { task, reminderAt ->
+            if (reminderAt != null && Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                pendingReminder = task to reminderAt
+                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                viewModel.setTaskReminder(task, reminderAt)
+            }
+        },
         onDeleteTask = viewModel::deleteTask,
         onAddSticker = viewModel::addSticker,
         onAddStickerAsset = viewModel::addStickerAsset,
@@ -107,6 +130,7 @@ fun DayEditorScreen(
     onAddTask: (String) -> Unit,
     onUpdateTaskTitle: (TaskEntity, String) -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
+    onSetTaskReminder: (TaskEntity, Long?) -> Unit,
     onDeleteTask: (TaskEntity) -> Unit,
     onAddSticker: (String) -> Unit,
     onAddStickerAsset: (StickerAssetEntity) -> Unit,
@@ -263,6 +287,7 @@ fun DayEditorScreen(
                             TaskRow(
                                 task = task,
                                 onCompletedChanged = onTaskCompletedChanged,
+                                onSetReminder = { onSetTaskReminder(task, it) },
                                 onEdit = { taskBeingEdited = task },
                                 onDelete = onDeleteTask,
                             )
@@ -310,6 +335,7 @@ fun DayEditorScreen(
 private fun TaskRow(
     task: TaskEntity,
     onCompletedChanged: (TaskEntity, Boolean) -> Unit,
+    onSetReminder: (Long?) -> Unit,
     onEdit: () -> Unit,
     onDelete: (TaskEntity) -> Unit,
 ) {
@@ -323,11 +349,41 @@ private fun TaskRow(
             checked = task.isCompleted,
             onCheckedChange = { onCompletedChanged(task, it) },
         )
+        val context = LocalContext.current
         Text(
             text = task.title,
             modifier = Modifier.weight(1f),
             textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
         )
+        TextButton(onClick = {
+            if (task.reminderAt != null) {
+                onSetReminder(null)
+            } else {
+                val calendar = Calendar.getInstance().apply {
+                    timeInMillis = task.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    if (task.date == LocalDate.now()) {
+                        timeInMillis = System.currentTimeMillis()
+                        add(Calendar.HOUR_OF_DAY, 1)
+                    } else {
+                        set(Calendar.HOUR_OF_DAY, 9)
+                        set(Calendar.MINUTE, 0)
+                    }
+                }
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        calendar.set(Calendar.HOUR_OF_DAY, hour)
+                        calendar.set(Calendar.MINUTE, minute)
+                        onSetReminder(calendar.timeInMillis)
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true,
+                ).show()
+            }
+        }) {
+            Text(if (task.reminderAt == null) stringResource(R.string.set_reminder) else "⏰")
+        }
         TextButton(onClick = onEdit) { Text(stringResource(R.string.edit)) }
         TextButton(onClick = { onDelete(task) }) { Text(stringResource(R.string.delete)) }
     }

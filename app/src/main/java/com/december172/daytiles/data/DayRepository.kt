@@ -21,17 +21,38 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import com.december172.daytiles.widget.DayTilesWidgetProvider
 
 class DayRepository(
     private val journalDao: JournalDao,
     private val taskDao: TaskDao,
     private val stickerPlacementDao: StickerPlacementDao,
+    private val appContext: Context? = null,
 ) {
     fun observeJournals(month: YearMonth): Flow<List<JournalEntryEntity>> =
         journalDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
     fun observeTasks(month: YearMonth): Flow<List<TaskEntity>> =
         taskDao.observeBetween(month.atDay(1), month.atEndOfMonth())
+
+    suspend fun recentOpenTasks(limit: Int = 3): List<TaskEntity> = taskDao.recentOpen(limit)
+
+    suspend fun allOpenTasks(): List<TaskEntity> = taskDao.allOpen()
+
+    suspend fun setTaskCompletedById(id: Long, completed: Boolean) {
+        val task = taskDao.findById(id) ?: return
+        setTaskCompleted(task, completed)
+    }
+
+    suspend fun setTaskReminder(task: TaskEntity, reminderAt: Long?) {
+        val updated = task.copy(reminderAt = reminderAt, updatedAt = System.currentTimeMillis())
+        taskDao.update(updated)
+        appContext?.let {
+            if (reminderAt == null) TaskReminderScheduler.cancel(it, task.id)
+            else TaskReminderScheduler.schedule(it, updated)
+        }
+        refreshWidgets()
+    }
 
     fun observeJournals(date: LocalDate): Flow<List<JournalEntryEntity>> =
         journalDao.observeForDate(date)
@@ -61,7 +82,7 @@ class DayRepository(
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
         val now = System.currentTimeMillis()
-        taskDao.insert(
+        val taskId = taskDao.insert(
             TaskEntity(
                 date = date,
                 title = cleanTitle,
@@ -70,19 +91,38 @@ class DayRepository(
                 updatedAt = now,
             ),
         )
+        if (taskId > 0) appContext?.let { TaskReminderScheduler.cancel(it, taskId) }
+        refreshWidgets()
     }
 
     suspend fun setTaskCompleted(task: TaskEntity, completed: Boolean) {
-        taskDao.update(task.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
+        val updated = task.copy(isCompleted = completed, updatedAt = System.currentTimeMillis())
+        taskDao.update(updated)
+        appContext?.let {
+            if (completed) TaskReminderScheduler.cancel(it, task.id)
+            else if (task.reminderAt != null) TaskReminderScheduler.schedule(it, task)
+        }
+        refreshWidgets()
     }
 
     suspend fun updateTaskTitle(task: TaskEntity, title: String) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
-        taskDao.update(task.copy(title = cleanTitle, updatedAt = System.currentTimeMillis()))
+        val updated = task.copy(title = cleanTitle, updatedAt = System.currentTimeMillis())
+        taskDao.update(updated)
+        if (task.reminderAt != null) appContext?.let { TaskReminderScheduler.schedule(it, updated) }
+        refreshWidgets()
     }
 
-    suspend fun deleteTask(id: Long) = taskDao.deleteById(id)
+    suspend fun deleteTask(id: Long) {
+        taskDao.deleteById(id)
+        appContext?.let { TaskReminderScheduler.cancel(it, id) }
+        refreshWidgets()
+    }
+
+    private fun refreshWidgets() {
+        appContext?.let(DayTilesWidgetProvider::refresh)
+    }
 
     suspend fun addSticker(date: LocalDate, symbol: String) {
         val cleanSymbol = symbol.trim()

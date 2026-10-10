@@ -6,15 +6,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.december172.daytiles.ui.AppNavigation
 import com.december172.daytiles.ui.theme.DayTilesTheme
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val openDate = intent.getStringExtra(EXTRA_OPEN_DATE)
         setContent {
             DayTilesTheme {
-                AppNavigation()
+                AppNavigation(initialDate = openDate?.let(LocalDate::parse))
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_DATE = "com.december172.daytiles.OPEN_DATE"
     }
 }

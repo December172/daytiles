@@ -105,6 +105,10 @@ class DayEditorViewModel(
         viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
 
+    fun setTaskReminder(task: TaskEntity, reminderAt: Long?) {
+        viewModelScope.launch { repository.setTaskReminder(task, reminderAt) }
+    }
+
     fun updateTaskTitle(task: TaskEntity, title: String) {
         viewModelScope.launch { repository.updateTaskTitle(task, title) }
     }

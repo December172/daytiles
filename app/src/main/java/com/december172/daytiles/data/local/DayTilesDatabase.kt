@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         StickerAssetEntity::class,
         StickerPlacementEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(DateConverters::class)
@@ -34,7 +34,7 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     context.applicationContext,
                     DayTilesDatabase::class.java,
                     "daytiles.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
             }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -123,6 +123,12 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_sticker_placements_assetId` " +
                         "ON `sticker_placements` (`assetId`)",
                 )
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `reminderAt` INTEGER")
             }
         }
     }
