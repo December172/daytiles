@@ -65,12 +65,17 @@ Implemented in this milestone:
 - Optional task reminders with Android notification permission handling and reboot rescheduling
 - Shared widget refresh after task creation, completion changes, reminder changes, title edits, and deletion
 
-### Milestone 6 — Interaction and visual refinement (next)
+### Milestone 6 — Interaction and visual refinement (in progress)
 
 - Improve task ordering and overdue/today affordances
 - Add accessibility labels and compact-screen layout checks
 - Refine the month, todo, bottom bar, and widget visual system using the on-device reference
 - Review import failure states and local sticker library management
+
+Started in this milestone:
+
+- Add localized Today and Overdue affordances to the task overview and both task widgets
+- Add an accessibility description to todo-widget completion controls
 
 ## Requirements
 

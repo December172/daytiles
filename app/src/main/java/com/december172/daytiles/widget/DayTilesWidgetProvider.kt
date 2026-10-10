@@ -70,7 +70,12 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
                     .onSuccess { tasks ->
                         val taskText = tasks.take(3).joinToString("\n") { task ->
                             val date = task.date.format(DateTimeFormatter.ofPattern("MMM d", locale))
-                            "○  $date  ${task.title}"
+                            val state = when {
+                                task.date.isBefore(today) -> context.getString(R.string.task_overdue)
+                                task.date == today -> context.getString(R.string.task_due_today)
+                                else -> null
+                            }
+                            "○  ${state?.let { "$it · " }.orEmpty()}$date  ${task.title}"
                         }.ifEmpty { context.getString(R.string.widget_no_tasks) }
                         views.setTextViewText(R.id.widget_tasks, taskText)
                         manager.updateAppWidget(widgetId, views)
@@ -84,12 +89,17 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
         internal fun taskSummary(context: Context, task: TaskEntity): String {
             val locale = locale(context)
             val date = task.date.format(DateTimeFormatter.ofPattern("MMM d", locale))
+            val dateState = when {
+                task.date.isBefore(LocalDate.now()) -> context.getString(R.string.task_overdue)
+                task.date == LocalDate.now() -> context.getString(R.string.task_due_today)
+                else -> null
+            }
             val reminder = task.reminderAt?.let {
                 DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
                     .format(java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()))
             }
-            return if (reminder == null) "$date · ${task.title}"
-            else "$date · $reminder · ${task.title}"
+            val summary = listOfNotNull(dateState, date, reminder).joinToString(" · ")
+            return "$summary · ${task.title}"
         }
     }
 }
