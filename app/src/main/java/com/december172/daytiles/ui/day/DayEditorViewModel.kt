@@ -11,6 +11,7 @@ import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.DayRepository
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.SubtaskEntity
 import com.december172.daytiles.data.local.StickerPlacementWithAsset
 import com.december172.daytiles.data.local.StickerAssetEntity
 import java.time.LocalDate
@@ -101,6 +102,14 @@ class DayEditorViewModel(
         viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
 
+    fun observeSubtasks(taskId: Long) = repository.observeSubtasks(taskId)
+
+    suspend fun loadSubtasks(taskId: Long) = repository.subtasksForTask(taskId)
+
+    fun setSubtaskCompleted(subtask: SubtaskEntity, completed: Boolean) {
+        viewModelScope.launch { repository.setSubtaskCompleted(subtask, completed) }
+    }
+
     fun setTaskReminder(task: TaskEntity, reminderAt: Long?) {
         viewModelScope.launch { repository.setTaskReminder(task, reminderAt) }
     }
@@ -111,12 +120,18 @@ class DayEditorViewModel(
         details: String,
         tags: String,
         reminderAt: Long?,
-        onSaved: () -> Unit,
+        subtasks: List<String>,
+        onSaved: (Long?) -> Unit,
     ) {
         viewModelScope.launch {
-            if (task == null) repository.addTask(date, title, details, tags, reminderAt)
-            else repository.updateTask(task, title, details, tags, reminderAt)
-            onSaved()
+            val savedId = if (task == null) {
+                repository.addTask(date, title, details, tags, reminderAt)
+            } else {
+                repository.updateTask(task, title, details, tags, reminderAt)
+                task.id
+            }
+            if (savedId > 0) repository.saveSubtasks(savedId, subtasks)
+            onSaved(savedId.takeIf { it > 0 })
         }
     }
 

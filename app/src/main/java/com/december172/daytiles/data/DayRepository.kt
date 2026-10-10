@@ -6,6 +6,8 @@ import com.december172.daytiles.data.local.JournalDao
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskDao
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.SubtaskDao
+import com.december172.daytiles.data.local.SubtaskEntity
 import com.december172.daytiles.data.local.StickerPlacementDao
 import com.december172.daytiles.data.local.StickerPlacementEntity
 import com.december172.daytiles.data.local.StickerAssetEntity
@@ -28,6 +30,7 @@ import com.december172.daytiles.widget.DayTilesWidgetProvider
 class DayRepository(
     private val journalDao: JournalDao,
     private val taskDao: TaskDao,
+    private val subtaskDao: SubtaskDao,
     private val stickerPlacementDao: StickerPlacementDao,
     private val appContext: Context? = null,
 ) {
@@ -64,6 +67,33 @@ class DayRepository(
 
     fun observeTasks(date: LocalDate): Flow<List<TaskEntity>> = taskDao.observeForDate(date)
 
+    fun observeSubtasks(taskId: Long): Flow<List<SubtaskEntity>> = subtaskDao.observeForTask(taskId)
+
+    suspend fun subtasksForTask(taskId: Long): List<SubtaskEntity> = subtaskDao.forTask(taskId)
+
+    suspend fun saveSubtasks(taskId: Long, titles: List<String>) {
+        val now = System.currentTimeMillis()
+        val existing = subtaskDao.forTask(taskId).groupBy { it.title }.mapValues { it.value.toMutableList() }
+        subtaskDao.deleteForTask(taskId)
+        titles.map(String::trim).filter(String::isNotEmpty).forEachIndexed { index, title ->
+            val previous = existing[title]?.removeFirstOrNull()
+            subtaskDao.insert(
+                SubtaskEntity(
+                    parentTaskId = taskId,
+                    title = title,
+                    isCompleted = previous?.isCompleted ?: false,
+                    sortOrder = index,
+                    createdAt = previous?.createdAt ?: now,
+                    updatedAt = now,
+                ),
+            )
+        }
+    }
+
+    suspend fun setSubtaskCompleted(subtask: SubtaskEntity, completed: Boolean) {
+        subtaskDao.update(subtask.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
+    }
+
     fun observeStickers(month: YearMonth): Flow<List<StickerPlacementWithAsset>> =
         stickerPlacementDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
@@ -92,9 +122,9 @@ class DayRepository(
         details: String,
         tags: String,
         reminderAt: Long?,
-    ) {
+    ): Long {
         val cleanTitle = title.trim()
-        if (cleanTitle.isEmpty()) return
+        if (cleanTitle.isEmpty()) return 0L
         val now = System.currentTimeMillis()
         val task = TaskEntity(
             date = date,
@@ -112,6 +142,7 @@ class DayRepository(
             else TaskReminderScheduler.schedule(it, task.copy(id = taskId))
         }
         refreshWidgets()
+        return taskId
     }
 
     suspend fun setTaskCompleted(task: TaskEntity, completed: Boolean) {
@@ -145,6 +176,7 @@ class DayRepository(
 
     suspend fun deleteTask(id: Long) {
         taskDao.deleteById(id)
+        subtaskDao.deleteForTask(id)
         appContext?.let { TaskReminderScheduler.cancel(it, id) }
         refreshWidgets()
     }

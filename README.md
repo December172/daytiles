@@ -15,6 +15,7 @@ The calendar provides a full-height month grid, date selection, and quick access
 - Full-height month calendar with month navigation, a Today shortcut, and selectable dates
 - Daily journal entries stored separately from tasks and stickers, with automatic saving
 - Dated tasks with a dedicated full-screen create/edit form for title, details, tags, and optional reminder alarms
+- Ordered, checkable subtasks on tasks, with completion progress and data-preserving Room migration
 - Task completion, deletion, due-date grouping, tag filtering, and overdue indicators in the task overview
 - Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
@@ -33,7 +34,7 @@ The following work is intentionally split into small steps. Implement and verify
 
 ### Task organization
 
-- [ ] **Subtasks** — support a parent task with an ordered checklist of child tasks, including completion state and a clear parent progress summary. Preserve existing tasks during the Room schema migration.
+- [x] **Subtasks** — support a parent task with an ordered checklist of child tasks, including completion state and a clear parent progress summary. Preserve existing tasks during the Room schema migration.
 - [ ] **Task targets and aims** — define daily and weekly goals (for example, a target number of completed tasks), show progress toward each goal, and provide a compact goal/punch-card view. Keep goal records distinct from journal entries and tasks.
 - [ ] **Four-quadrant prioritization** — optionally classify tasks by importance and urgency, then provide a separate Eisenhower-style view. Avoid forcing this model on ordinary task entry.
 

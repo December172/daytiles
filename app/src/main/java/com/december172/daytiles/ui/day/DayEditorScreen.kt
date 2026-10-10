@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.SubtaskEntity
 import com.december172.daytiles.data.local.StickerPlacementWithAsset
 import com.december172.daytiles.data.local.StickerAssetEntity
 import com.december172.daytiles.data.local.StickerAssetKind
@@ -94,6 +95,7 @@ private data class TaskDraft(
     val details: String,
     val tags: String,
     val reminderAt: Long?,
+    val subtasks: List<String>,
 )
 
 @Composable
@@ -103,12 +105,27 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
         factory = DayEditorViewModel.factory(date),
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val task = taskId?.let { id -> uiState.tasks.firstOrNull { it.id == id } }
+    var createdTaskId by remember { mutableStateOf<Long?>(null) }
+    val effectiveTaskId = taskId ?: createdTaskId
+    val task = effectiveTaskId?.let { id -> uiState.tasks.firstOrNull { it.id == id } }
+    val subtasks by remember(task?.id) {
+        if (task != null) viewModel.observeSubtasks(task.id) else kotlinx.coroutines.flow.flowOf(emptyList())
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val initialSubtasks by androidx.compose.runtime.produceState<List<SubtaskEntity>?>(null, task?.id) {
+        value = task?.let { viewModel.loadSubtasks(it.id) }
+    }
     val context = LocalContext.current
     var pendingSave by remember { mutableStateOf<TaskDraft?>(null) }
 
     fun save(draft: TaskDraft, reminderAt: Long? = draft.reminderAt) {
-        viewModel.saveTask(task, draft.title, draft.details, draft.tags, reminderAt, onBack)
+        viewModel.saveTask(task, draft.title, draft.details, draft.tags, reminderAt, draft.subtasks) { savedId ->
+            val parentId = task?.id ?: savedId
+            if (parentId != null) {
+                if (task == null) createdTaskId = parentId else onBack()
+            } else {
+                onBack()
+            }
+        }
     }
 
     val notificationPermission = rememberLauncherForActivityResult(RequestPermission()) { granted ->
@@ -116,10 +133,13 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
         pendingSave = null
     }
 
-    if (taskId == null || task != null) {
+    if (effectiveTaskId == null || task != null) {
         TaskEditorScreen(
             date = date,
             task = task,
+            subtasks = subtasks,
+            initialSubtasks = initialSubtasks,
+            onToggleSubtask = { viewModel.setSubtaskCompleted(it, !it.isCompleted) },
             onBack = onBack,
             onDelete = task?.let { existingTask ->
                 { viewModel.deleteTask(existingTask, onBack) }
@@ -146,6 +166,9 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
 private fun TaskEditorScreen(
     date: LocalDate,
     task: TaskEntity?,
+    subtasks: List<SubtaskEntity>,
+    initialSubtasks: List<SubtaskEntity>?,
+    onToggleSubtask: (SubtaskEntity) -> Unit,
     onBack: () -> Unit,
     onDelete: (() -> Unit)?,
     onSave: (TaskDraft) -> Unit,
@@ -154,11 +177,18 @@ private fun TaskEditorScreen(
     var details by remember(task?.id) { mutableStateOf(task?.details.orEmpty()) }
     var tags by remember(task?.id) { mutableStateOf(task?.tags.orEmpty().split(',').joinToString(", ")) }
     var reminderAt by remember(task?.id) { mutableStateOf(task?.reminderAt) }
+    var subtaskTitles by remember(task?.id) { mutableStateOf<List<String>?>(null) }
+    var newSubtask by remember(task?.id) { mutableStateOf("") }
     var confirmDelete by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val dateLabel = remember(date, locale) {
         date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
+    }
+    LaunchedEffect(initialSubtasks, task?.id) {
+        if (subtaskTitles == null && initialSubtasks != null) {
+            subtaskTitles = initialSubtasks.map { it.title }
+        }
     }
 
     Scaffold { padding ->
@@ -179,7 +209,7 @@ private fun TaskEditorScreen(
                     fontWeight = FontWeight.SemiBold,
                 )
                 TextButton(
-                    onClick = { onSave(TaskDraft(title, details, tags, reminderAt)) },
+                    onClick = { onSave(TaskDraft(title, details, tags, reminderAt, subtaskTitles.orEmpty())) },
                     enabled = title.isNotBlank(),
                 ) { Text(stringResource(R.string.save)) }
             }
@@ -213,6 +243,62 @@ private fun TaskEditorScreen(
                 placeholder = { Text(stringResource(R.string.task_details_hint)) },
                 minLines = 4,
             )
+            if (task != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.subtasks_progress, subtasks.count { it.isCompleted }, subtasks.size),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    subtasks.forEachIndexed { index, subtask ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Checkbox(
+                                checked = subtask.isCompleted,
+                                onCheckedChange = { onToggleSubtask(subtask) },
+                            )
+                            Text(subtask.title, modifier = Modifier.weight(1f))
+                            TextButton(
+                                onClick = {
+                                    subtaskTitles = subtaskTitles.orEmpty().toMutableList().also {
+                                        val previous = it[index - 1]
+                                        it[index - 1] = it[index]
+                                        it[index] = previous
+                                    }
+                                },
+                                enabled = index > 0,
+                            ) { Text("↑") }
+                            TextButton(
+                                onClick = {
+                                    subtaskTitles = subtaskTitles.orEmpty().toMutableList().also {
+                                        val next = it[index + 1]
+                                        it[index + 1] = it[index]
+                                        it[index] = next
+                                    }
+                                },
+                                enabled = index < (subtaskTitles?.lastIndex ?: -1),
+                            ) { Text("↓") }
+                            TextButton(onClick = { subtaskTitles = subtaskTitles.orEmpty().toMutableList().also { it.removeAt(index) } }) {
+                                Text(stringResource(R.string.delete))
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = newSubtask,
+                        onValueChange = { newSubtask = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.add_subtask)) },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    subtaskTitles = subtaskTitles.orEmpty() + newSubtask.trim()
+                                    newSubtask = ""
+                                },
+                                enabled = newSubtask.isNotBlank(),
+                            ) { Text(stringResource(R.string.add)) }
+                        },
+                        singleLine = true,
+                    )
+                }
+            }
             OutlinedTextField(
                 value = tags,
                 onValueChange = { tags = it },

@@ -36,3 +36,21 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: Long)
 }
+
+@Dao
+interface SubtaskDao {
+    @Query("SELECT * FROM subtasks WHERE parentTaskId = :parentTaskId ORDER BY sortOrder, id")
+    fun observeForTask(parentTaskId: Long): Flow<List<SubtaskEntity>>
+
+    @Query("SELECT * FROM subtasks WHERE parentTaskId = :parentTaskId ORDER BY sortOrder, id")
+    suspend fun forTask(parentTaskId: Long): List<SubtaskEntity>
+
+    @Insert
+    suspend fun insert(subtask: SubtaskEntity): Long
+
+    @Update
+    suspend fun update(subtask: SubtaskEntity)
+
+    @Query("DELETE FROM subtasks WHERE parentTaskId = :parentTaskId")
+    suspend fun deleteForTask(parentTaskId: Long)
+}

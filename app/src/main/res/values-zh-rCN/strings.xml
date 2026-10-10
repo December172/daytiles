@@ -24,6 +24,8 @@
     <string name="delete_task_confirmation">确定删除此任务吗？此操作无法撤销。</string>
     <string name="task_details">任务详情</string>
     <string name="task_details_hint">补充背景、步骤或需要记住的信息。</string>
+    <string name="subtasks_progress">子任务 · 已完成 %1$d/%2$d</string>
+    <string name="add_subtask">添加子任务</string>
     <string name="task_tags">标签</string>
     <string name="task_tags_hint">多个标签请用逗号分隔</string>
     <string name="all_tags">全部标签</string>

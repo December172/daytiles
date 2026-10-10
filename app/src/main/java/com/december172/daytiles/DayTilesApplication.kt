@@ -10,6 +10,7 @@ class DayTilesApplication : Application() {
         DayRepository(
             database.journalDao(),
             database.taskDao(),
+            database.subtaskDao(),
             database.stickerPlacementDao(),
             applicationContext,
         )
