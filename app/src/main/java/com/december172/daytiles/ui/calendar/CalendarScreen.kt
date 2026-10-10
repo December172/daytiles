@@ -17,10 +17,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -52,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.LaunchedEffect
 import com.december172.daytiles.R
 import com.december172.daytiles.domain.model.DayContent
+import com.december172.daytiles.domain.model.parseTaskTags
 import com.december172.daytiles.data.local.TaskEntity
 import com.december172.daytiles.data.local.StickerAssetKind
 import coil3.compose.AsyncImage
@@ -79,6 +83,7 @@ fun CalendarRoute(
         }
     }
     var selectedTab by remember { mutableStateOf(CalendarTab.CALENDAR) }
+    var selectedTaskTag by remember { mutableStateOf<String?>(null) }
     CalendarScreen(
         uiState = uiState,
         onPreviousMonth = viewModel::showPreviousMonth,
@@ -90,6 +95,8 @@ fun CalendarRoute(
         tasks = uiState.tasks,
         onTabSelected = { selectedTab = it },
         onTaskCompletedChanged = viewModel::setTaskCompleted,
+        selectedTaskTag = selectedTaskTag,
+        onTaskTagSelected = { selectedTaskTag = it },
     )
 }
 
@@ -108,6 +115,8 @@ fun CalendarScreen(
     tasks: List<TaskEntity> = emptyList(),
     onTabSelected: (CalendarTab) -> Unit = {},
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit = { _, _ -> },
+    selectedTaskTag: String? = null,
+    onTaskTagSelected: (String?) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -168,6 +177,8 @@ fun CalendarScreen(
                     onPreviousMonth = onPreviousMonth,
                     onNextMonth = onNextMonth,
                     onTaskCompletedChanged = onTaskCompletedChanged,
+                    selectedTag = selectedTaskTag,
+                    onTagSelected = onTaskTagSelected,
                     onOpenDay = { date ->
                         onDateSelected(date)
                         onOpenDay(date)
@@ -187,6 +198,8 @@ private fun TaskOverview(
     onNextMonth: () -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    selectedTag: String?,
+    onTagSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -207,15 +220,36 @@ private fun TaskOverview(
             )
             HeaderIconButton(stringResource(R.string.next_month), "›", onNextMonth)
         }
-        if (tasks.isEmpty()) {
+        val availableTags = tasks.flatMap { parseTaskTags(it.tags) }.distinct().sorted()
+        val filteredTasks = if (selectedTag == null) tasks else tasks.filter { selectedTag in parseTaskTags(it.tags) }
+        if (availableTags.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = selectedTag == null,
+                    onClick = { onTagSelected(null) },
+                    label = { Text(stringResource(R.string.all_tags)) },
+                )
+                availableTags.forEach { tag ->
+                    FilterChip(
+                        selected = selectedTag == tag,
+                        onClick = { onTagSelected(if (selectedTag == tag) null else tag) },
+                        label = { Text(tag) },
+                    )
+                }
+            }
+        }
+        if (filteredTasks.isEmpty()) {
             Text(
-                text = stringResource(R.string.no_tasks_this_month),
+                text = stringResource(if (tasks.isEmpty()) R.string.no_tasks_this_month else R.string.no_tasks_for_tag),
                 modifier = Modifier.padding(24.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                tasks.groupBy { it.date }.forEach { (date, dayTasks) ->
+                filteredTasks.groupBy { it.date }.forEach { (date, dayTasks) ->
                     item(key = "header-$date") {
                         TextButton(onClick = { onOpenDay(date) }) {
                             Text(
@@ -244,6 +278,15 @@ private fun TaskOverview(
                                     task.title,
                                     textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
                                 )
+                                if (task.tags.isNotBlank()) {
+                                    Text(
+                                        task.tags.split(',').joinToString(" · "),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
                                 if (!task.isCompleted && task.date.isBefore(LocalDate.now())) {
                                     Text(
                                         stringResource(R.string.task_overdue),

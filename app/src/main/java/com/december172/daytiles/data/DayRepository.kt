@@ -11,6 +11,7 @@ import com.december172.daytiles.data.local.StickerPlacementEntity
 import com.december172.daytiles.data.local.StickerAssetEntity
 import com.december172.daytiles.data.local.StickerAssetKind
 import com.december172.daytiles.data.local.StickerPlacementWithAsset
+import com.december172.daytiles.domain.model.normalizeTaskTags
 import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -112,10 +113,11 @@ class DayRepository(
         refreshWidgets()
     }
 
-    suspend fun updateTaskTitle(task: TaskEntity, title: String) {
+    suspend fun updateTask(task: TaskEntity, title: String, tags: String) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
-        val updated = task.copy(title = cleanTitle, updatedAt = System.currentTimeMillis())
+        val cleanTags = normalizeTaskTags(tags)
+        val updated = task.copy(title = cleanTitle, tags = cleanTags, updatedAt = System.currentTimeMillis())
         taskDao.update(updated)
         if (task.reminderAt != null) appContext?.let { TaskReminderScheduler.schedule(it, updated) }
         refreshWidgets()
