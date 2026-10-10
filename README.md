@@ -1,30 +1,30 @@
 # DayTiles
 
-DayTiles 是一个完全离线、免费且开源的 Android 视觉日历、日记与每日计划应用。项目以占满屏幕主体的月历为中心，让贴纸、日记预览和可勾选任务直接出现在日期格中。
+DayTiles is a free, open-source, offline-first Android visual calendar, journal, and daily planner. Its primary interface is an expanded month view where stickers, journal previews, and checkable tasks appear directly inside each day tile.
 
-## 当前状态
+## Current status
 
-里程碑 1 已建立单 `app` 模块的 Jetpack Compose 工程，并提供：
+Milestone 1 established the single-module Jetpack Compose application with:
 
-- 支持 4–6 周的自适应月历布局
-- 上月、下月、返回今天与日期选择
-- 根据可用高度裁剪信息密度的大尺寸日期格
-- 独立的日记、任务、贴纸预览模型
-- 与生产数据层隔离的里程碑 1 示例内容
-- 浅色与深色 Material 3 主题
+- An adaptive four-to-six-week month layout
+- Previous month, next month, today, and date selection controls
+- Large day cells that adjust preview density to available height
+- Separate journal, task, and sticker preview models
+- Light and dark Material 3 themes
+- English as the default language and Simplified Chinese (`zh-CN`) resources
 
-当前示例内容不会持久化；Room、真实编辑器和贴纸资源将在后续里程碑实现。
+Milestone 2 is in progress, adding Room-backed journal entries and tasks. Sticker persistence remains a later milestone.
 
-## 环境
+## Requirements
 
-- JDK 17 或更高版本（源码目标为 Java 17）
+- JDK 17 or newer (Java 17 source target)
 - Android SDK 37
 - Android SDK Build Tools 36.0.0
-- 使用仓库内 Gradle Wrapper，无需系统 Gradle
+- The checked-in Gradle Wrapper; no system Gradle installation is required
 
-主要构建版本由 `gradle/libs.versions.toml` 统一管理：AGP 9.4.0、Kotlin/Compose Compiler 2.4.10、Compose BOM 2026.09.00。
+Dependency versions are centralized in `gradle/libs.versions.toml`.
 
-## 构建与测试
+## Build and test
 
 ```shell
 ./gradlew assembleDebug
@@ -32,20 +32,27 @@ DayTiles 是一个完全离线、免费且开源的 Android 视觉日历、日�
 ./gradlew lintDebug
 ```
 
-调试 APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
-## 结构
+## Project structure
 
 ```text
 app/src/main/java/com/december172/daytiles/
-├── data/sample/       # 仅用于里程碑 1 的演示内容
-├── domain/model/      # 日记、任务与贴纸的独立模型
+├── data/              # Room, repositories, and temporary sticker samples
+├── domain/model/      # Independent journal, task, and sticker models
 └── ui/
-    ├── calendar/      # 月历状态、日期算法和 Compose UI
-    └── theme/         # Material 3 主题
+    ├── calendar/      # Month state, date algorithms, and calendar UI
+    ├── day/           # Daily journal and task editor
+    └── theme/         # Material 3 theme
 ```
 
-## 隐私与联网
+## Privacy and connectivity
 
-核心功能按完全离线设计。项目不包含账号、广告、分析、追踪、云服务或后端依赖。
+Core functionality is fully offline. DayTiles contains no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
 
+## Credits
+
+- December172 — project creator and maintainer
+- OpenAI Codex / ChatGPT — development collaboration, implementation, testing, and documentation
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contribution details.
