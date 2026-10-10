@@ -1,5 +1,7 @@
 package com.december172.daytiles.ui.day
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -40,7 +45,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import com.december172.daytiles.data.local.TaskEntity
-import com.december172.daytiles.data.local.StickerPlacementEntity
+import com.december172.daytiles.data.local.StickerPlacementWithAsset
+import com.december172.daytiles.data.local.StickerAssetEntity
+import com.december172.daytiles.data.local.StickerAssetKind
+import coil3.compose.AsyncImage
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -49,6 +58,10 @@ import java.time.format.FormatStyle
 fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
     val viewModel: DayEditorViewModel = viewModel(factory = DayEditorViewModel.factory(date))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { viewModel.importImageSticker(context, it) }
+    }
     DayEditorScreen(
         uiState = uiState,
         onBack = onBack,
@@ -58,6 +71,8 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onTaskCompletedChanged = viewModel::setTaskCompleted,
         onDeleteTask = viewModel::deleteTask,
         onAddSticker = viewModel::addSticker,
+        onAddStickerAsset = viewModel::addStickerAsset,
+        onImportImage = { imagePicker.launch(arrayOf("image/png", "image/webp")) },
         onDeleteSticker = viewModel::deleteSticker,
     )
 }
@@ -72,7 +87,9 @@ fun DayEditorScreen(
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
     onDeleteTask: (TaskEntity) -> Unit,
     onAddSticker: (String) -> Unit,
-    onDeleteSticker: (StickerPlacementEntity) -> Unit,
+    onAddStickerAsset: (StickerAssetEntity) -> Unit,
+    onImportImage: () -> Unit,
+    onDeleteSticker: (StickerPlacementWithAsset) -> Unit,
 ) {
     var newTaskTitle by remember { mutableStateOf("") }
     var taskBeingEdited by remember { mutableStateOf<TaskEntity?>(null) }
@@ -159,7 +176,17 @@ fun DayEditorScreen(
                         Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                             uiState.stickers.forEach { sticker ->
                                 TextButton(onClick = { onDeleteSticker(sticker) }) {
-                                    Text("${sticker.symbol}  ×")
+                                    if (sticker.kind == StickerAssetKind.IMAGE) {
+                                        AsyncImage(
+                                            model = File(sticker.source),
+                                            contentDescription = sticker.displayName,
+                                            modifier = Modifier.height(32.dp),
+                                            contentScale = ContentScale.Fit,
+                                        )
+                                        Text("  ×")
+                                    } else {
+                                        Text("${sticker.source}  ×")
+                                    }
                                 }
                             }
                         }
@@ -229,10 +256,19 @@ fun DayEditorScreen(
     }
     if (showStickerPicker) {
         StickerPickerDialog(
+            assets = uiState.stickerAssets,
             onDismiss = { showStickerPicker = false },
             onStickerSelected = { symbol ->
                 onAddSticker(symbol)
                 showStickerPicker = false
+            },
+            onAssetSelected = { asset ->
+                onAddStickerAsset(asset)
+                showStickerPicker = false
+            },
+            onImportImage = {
+                showStickerPicker = false
+                onImportImage()
             },
         )
     }
@@ -297,15 +333,18 @@ private fun EditTaskDialog(
 
 @Composable
 private fun StickerPickerDialog(
+    assets: List<StickerAssetEntity>,
     onDismiss: () -> Unit,
     onStickerSelected: (String) -> Unit,
+    onAssetSelected: (StickerAssetEntity) -> Unit,
+    onImportImage: () -> Unit,
 ) {
     var customEmoji by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.choose_sticker)) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 builtInStickers.chunked(5).forEach { row ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         row.forEach { symbol ->
@@ -317,6 +356,31 @@ private fun StickerPickerDialog(
                             }
                         }
                     }
+                }
+                val imageAssets = assets.filter { it.kind == StickerAssetKind.IMAGE }
+                if (imageAssets.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.imported_stickers),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        imageAssets.forEach { asset ->
+                            TextButton(onClick = { onAssetSelected(asset) }) {
+                                AsyncImage(
+                                    model = File(asset.source),
+                                    contentDescription = asset.displayName,
+                                    modifier = Modifier.height(44.dp),
+                                    contentScale = ContentScale.Fit,
+                                )
+                            }
+                        }
+                    }
+                }
+                TextButton(
+                    onClick = onImportImage,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.import_sticker_image))
                 }
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(

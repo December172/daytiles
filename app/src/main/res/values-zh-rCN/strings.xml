@@ -27,4 +27,6 @@
     <string name="tap_to_edit">点按编辑</string>
     <string name="custom_emoji">自定义 Emoji</string>
     <string name="custom_emoji_placeholder">输入或粘贴 Emoji</string>
+    <string name="import_sticker_image">导入 PNG 或 WebP</string>
+    <string name="imported_stickers">已导入贴纸</string>
 </resources>

@@ -9,7 +9,7 @@ import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.DayRepository
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskEntity
-import com.december172.daytiles.data.local.StickerPlacementEntity
+import com.december172.daytiles.data.local.StickerPlacementWithAsset
 import com.december172.daytiles.domain.model.DayContent
 import com.december172.daytiles.domain.model.JournalPreview
 import com.december172.daytiles.domain.model.TaskPreview
@@ -88,7 +88,7 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
     private fun mergeContent(
         journals: List<JournalEntryEntity>,
         tasks: List<TaskEntity>,
-        stickers: List<StickerPlacementEntity>,
+        stickers: List<StickerPlacementWithAsset>,
     ): Map<LocalDate, DayContent> {
         val journalsByDate = journals.groupBy { it.date }
         val tasksByDate = tasks.groupBy { it.date }
@@ -102,7 +102,12 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
                     TaskPreview(it.id.toString(), it.title, it.isCompleted)
                 },
                 stickers = stickersByDate[date].orEmpty().map {
-                    StickerPreview(it.id.toString(), it.symbol)
+                    StickerPreview(
+                        id = it.placementId.toString(),
+                        kind = it.kind,
+                        source = it.source,
+                        displayName = it.displayName,
+                    )
                 },
             )
         }
