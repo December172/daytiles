@@ -71,10 +71,12 @@ class DayRepository(
     suspend fun deleteTask(id: Long) = taskDao.deleteById(id)
 
     suspend fun addSticker(date: LocalDate, symbol: String) {
+        val cleanSymbol = symbol.trim()
+        if (cleanSymbol.isEmpty()) return
         stickerPlacementDao.insert(
             StickerPlacementEntity(
                 date = date,
-                symbol = symbol,
+                symbol = cleanSymbol,
                 sortOrder = stickerPlacementDao.nextSortOrder(date),
                 createdAt = System.currentTimeMillis(),
             ),

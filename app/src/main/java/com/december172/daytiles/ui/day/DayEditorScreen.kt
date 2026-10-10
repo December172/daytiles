@@ -300,6 +300,7 @@ private fun StickerPickerDialog(
     onDismiss: () -> Unit,
     onStickerSelected: (String) -> Unit,
 ) {
+    var customEmoji by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.choose_sticker)) },
@@ -317,9 +318,24 @@ private fun StickerPickerDialog(
                         }
                     }
                 }
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = customEmoji,
+                    onValueChange = { customEmoji = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.custom_emoji)) },
+                    placeholder = { Text(stringResource(R.string.custom_emoji_placeholder)) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                )
             }
         },
-        confirmButton = {},
+        confirmButton = {
+            TextButton(
+                onClick = { onStickerSelected(customEmoji.trim()) },
+                enabled = customEmoji.isNotBlank(),
+            ) { Text(stringResource(R.string.add)) }
+        },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },

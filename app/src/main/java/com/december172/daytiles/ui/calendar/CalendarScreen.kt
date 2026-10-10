@@ -109,6 +109,7 @@ fun CalendarScreen(
             MonthGrid(
                 uiState = uiState,
                 onDateSelected = onDateSelected,
+                onOpenDay = onOpenDay,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -219,6 +220,7 @@ private fun WeekdayHeader() {
 private fun MonthGrid(
     uiState: CalendarUiState,
     onDateSelected: (LocalDate) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val weeks = remember(uiState.visibleMonth) { buildMonthWeeks(uiState.visibleMonth) }
@@ -242,7 +244,10 @@ private fun MonthGrid(
                             content = uiState.contentByDate[date],
                             isToday = date == uiState.today,
                             isSelected = date == uiState.selectedDate,
-                            onClick = { onDateSelected(date) },
+                            onClick = {
+                                if (date == uiState.selectedDate) onOpenDay(date)
+                                else onDateSelected(date)
+                            },
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -320,6 +325,17 @@ private fun DayCell(
                             fontSize = if (compact) 12.sp else 15.sp,
                         )
                     }
+                }
+                if (isSelected && !compact) {
+                    Text(
+                        text = stringResource(R.string.tap_to_edit),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 8.sp,
+                        lineHeight = 9.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 if (content != null) {
                     DayPreview(content = content, compact = compact, spacious = spacious)
