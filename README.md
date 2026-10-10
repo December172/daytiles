@@ -13,7 +13,16 @@ Milestone 1 established the single-module Jetpack Compose application with:
 - Light and dark Material 3 themes
 - English as the default language and Simplified Chinese (`zh-CN`) resources
 
-Milestone 2 is in progress, adding Room-backed journal entries and tasks. Sticker persistence remains a later milestone.
+Milestone 2 provides:
+
+- Room-backed plain-text daily journals with automatic saving
+- Persistent daily tasks with add, delete, and completion controls
+- Stable task ordering and completed-task strikethrough
+- A dedicated day editor reached from the selected calendar date
+- Batched month queries so the calendar does not query each cell separately
+- Versioned Room schema export for future non-destructive migrations
+
+Sticker previews remain sample-only; persistent sticker assets and placements belong to Milestone 3.
 
 ## Requirements
 

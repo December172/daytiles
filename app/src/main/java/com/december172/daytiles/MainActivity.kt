@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.december172.daytiles.ui.calendar.CalendarRoute
+import com.december172.daytiles.ui.AppNavigation
 import com.december172.daytiles.ui.theme.DayTilesTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,9 +13,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DayTilesTheme {
-                CalendarRoute()
+                AppNavigation()
             }
         }
     }
 }
-

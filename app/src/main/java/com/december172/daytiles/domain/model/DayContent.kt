@@ -20,6 +20,4 @@ data class TaskPreview(
 data class StickerPreview(
     val id: String,
     val symbol: String,
-    val description: String,
 )
-

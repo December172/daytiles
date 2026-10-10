@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DayTiles</string>
+    <string name="month_title">%2$d年%1$s</string>
+    <string name="selected_date">已选 · %1$s</string>
+    <string name="today">今天</string>
+    <string name="previous_month">上个月</string>
+    <string name="next_month">下个月</string>
+    <string name="date_accessibility">%1$s</string>
+    <string name="sticker_accessibility">贴纸 %1$s</string>
+    <string name="back">‹ 返回</string>
+    <string name="journal_heading">今日日记</string>
+    <string name="journal_placeholder">写下今天发生的事……</string>
+    <string name="tasks_heading">任务</string>
+    <string name="add_task_placeholder">添加任务</string>
+    <string name="add">添加</string>
+    <string name="delete">删除</string>
+</resources>
