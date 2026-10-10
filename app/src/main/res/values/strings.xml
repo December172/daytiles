@@ -20,4 +20,8 @@
     <string name="task_title">Task title</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
+    <string name="stickers_heading">Stickers</string>
+    <string name="add_sticker">+ Add sticker</string>
+    <string name="no_stickers">Add a sticker to make this day stand out.</string>
+    <string name="choose_sticker">Choose a sticker</string>
 </resources>

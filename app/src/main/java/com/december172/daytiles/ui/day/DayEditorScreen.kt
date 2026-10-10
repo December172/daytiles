@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.StickerPlacementEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -54,6 +57,8 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onUpdateTaskTitle = viewModel::updateTaskTitle,
         onTaskCompletedChanged = viewModel::setTaskCompleted,
         onDeleteTask = viewModel::deleteTask,
+        onAddSticker = viewModel::addSticker,
+        onDeleteSticker = viewModel::deleteSticker,
     )
 }
 
@@ -66,9 +71,12 @@ fun DayEditorScreen(
     onUpdateTaskTitle: (TaskEntity, String) -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
     onDeleteTask: (TaskEntity) -> Unit,
+    onAddSticker: (String) -> Unit,
+    onDeleteSticker: (StickerPlacementEntity) -> Unit,
 ) {
     var newTaskTitle by remember { mutableStateOf("") }
     var taskBeingEdited by remember { mutableStateOf<TaskEntity?>(null) }
+    var showStickerPicker by remember { mutableStateOf(false) }
     val locale = LocalConfiguration.current.locales[0]
     val dateTitle = remember(uiState.date, locale) {
         uiState.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
@@ -118,6 +126,44 @@ fun DayEditorScreen(
                         placeholder = { Text(stringResource(R.string.journal_placeholder)) },
                         shape = RoundedCornerShape(14.dp),
                     )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.stickers_heading),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        TextButton(onClick = { showStickerPicker = true }) {
+                            Text(stringResource(R.string.add_sticker))
+                        }
+                    }
+                    if (uiState.stickers.isEmpty()) {
+                        Text(
+                            stringResource(R.string.no_stickers),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            uiState.stickers.forEach { sticker ->
+                                TextButton(onClick = { onDeleteSticker(sticker) }) {
+                                    Text("${sticker.symbol}  ×")
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -181,6 +227,15 @@ fun DayEditorScreen(
             },
         )
     }
+    if (showStickerPicker) {
+        StickerPickerDialog(
+            onDismiss = { showStickerPicker = false },
+            onStickerSelected = { symbol ->
+                onAddSticker(symbol)
+                showStickerPicker = false
+            },
+        )
+    }
 }
 
 @Composable
@@ -239,3 +294,40 @@ private fun EditTaskDialog(
         },
     )
 }
+
+@Composable
+private fun StickerPickerDialog(
+    onDismiss: () -> Unit,
+    onStickerSelected: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.choose_sticker)) },
+        text = {
+            Column {
+                builtInStickers.chunked(5).forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        row.forEach { symbol ->
+                            TextButton(
+                                onClick = { onStickerSelected(symbol) },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(symbol, style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+private val builtInStickers = listOf(
+    "☀️", "🌙", "⭐", "✨", "💛",
+    "🌸", "🌿", "🍂", "☕", "🎉",
+    "📚", "💡", "✅", "🏃", "😴",
+)

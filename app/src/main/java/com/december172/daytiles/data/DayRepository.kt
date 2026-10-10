@@ -4,6 +4,8 @@ import com.december172.daytiles.data.local.JournalDao
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskDao
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.StickerPlacementDao
+import com.december172.daytiles.data.local.StickerPlacementEntity
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 class DayRepository(
     private val journalDao: JournalDao,
     private val taskDao: TaskDao,
+    private val stickerPlacementDao: StickerPlacementDao,
 ) {
     fun observeJournals(month: YearMonth): Flow<List<JournalEntryEntity>> =
         journalDao.observeBetween(month.atDay(1), month.atEndOfMonth())
@@ -22,6 +25,12 @@ class DayRepository(
         journalDao.observeForDate(date)
 
     fun observeTasks(date: LocalDate): Flow<List<TaskEntity>> = taskDao.observeForDate(date)
+
+    fun observeStickers(month: YearMonth): Flow<List<StickerPlacementEntity>> =
+        stickerPlacementDao.observeBetween(month.atDay(1), month.atEndOfMonth())
+
+    fun observeStickers(date: LocalDate): Flow<List<StickerPlacementEntity>> =
+        stickerPlacementDao.observeForDate(date)
 
     suspend fun saveJournal(entry: JournalEntryEntity): Long {
         if (entry.content.isBlank()) {
@@ -60,4 +69,17 @@ class DayRepository(
     }
 
     suspend fun deleteTask(id: Long) = taskDao.deleteById(id)
+
+    suspend fun addSticker(date: LocalDate, symbol: String) {
+        stickerPlacementDao.insert(
+            StickerPlacementEntity(
+                date = date,
+                symbol = symbol,
+                sortOrder = stickerPlacementDao.nextSortOrder(date),
+                createdAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    suspend fun deleteSticker(id: Long) = stickerPlacementDao.deleteById(id)
 }
