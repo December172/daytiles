@@ -1,14 +1,23 @@
 package com.december172.daytiles.data
 
+import android.content.Context
+import android.net.Uri
 import com.december172.daytiles.data.local.JournalDao
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskDao
 import com.december172.daytiles.data.local.TaskEntity
 import com.december172.daytiles.data.local.StickerPlacementDao
 import com.december172.daytiles.data.local.StickerPlacementEntity
+import com.december172.daytiles.data.local.StickerAssetEntity
+import com.december172.daytiles.data.local.StickerAssetKind
+import com.december172.daytiles.data.local.StickerPlacementWithAsset
+import java.io.File
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class DayRepository(
     private val journalDao: JournalDao,
@@ -26,11 +35,13 @@ class DayRepository(
 
     fun observeTasks(date: LocalDate): Flow<List<TaskEntity>> = taskDao.observeForDate(date)
 
-    fun observeStickers(month: YearMonth): Flow<List<StickerPlacementEntity>> =
+    fun observeStickers(month: YearMonth): Flow<List<StickerPlacementWithAsset>> =
         stickerPlacementDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
-    fun observeStickers(date: LocalDate): Flow<List<StickerPlacementEntity>> =
+    fun observeStickers(date: LocalDate): Flow<List<StickerPlacementWithAsset>> =
         stickerPlacementDao.observeForDate(date)
+
+    fun observeStickerAssets(): Flow<List<StickerAssetEntity>> = stickerPlacementDao.observeAssets()
 
     suspend fun saveJournal(entry: JournalEntryEntity): Long {
         if (entry.content.isBlank()) {
@@ -73,15 +84,80 @@ class DayRepository(
     suspend fun addSticker(date: LocalDate, symbol: String) {
         val cleanSymbol = symbol.trim()
         if (cleanSymbol.isEmpty()) return
+        val assetId = stickerPlacementDao.findAssetId(StickerAssetKind.EMOJI, cleanSymbol)
+            ?: stickerPlacementDao.insertAsset(
+                StickerAssetEntity(
+                    kind = StickerAssetKind.EMOJI,
+                    source = cleanSymbol,
+                    displayName = cleanSymbol,
+                    createdAt = System.currentTimeMillis(),
+                ),
+            )
+        placeStickerAsset(date, assetId)
+    }
+
+    suspend fun placeStickerAsset(date: LocalDate, assetId: Long) {
         stickerPlacementDao.insert(
             StickerPlacementEntity(
                 date = date,
-                symbol = cleanSymbol,
+                assetId = assetId,
                 sortOrder = stickerPlacementDao.nextSortOrder(date),
                 createdAt = System.currentTimeMillis(),
             ),
         )
     }
 
+    suspend fun importImageSticker(context: Context, date: LocalDate, uri: Uri) = withContext(Dispatchers.IO) {
+        val mimeType = context.contentResolver.getType(uri)
+        val extension = when (mimeType) {
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            else -> return@withContext
+        }
+        val stickerDirectory = File(context.filesDir, "stickers").apply { mkdirs() }
+        val destination = File(stickerDirectory, "${UUID.randomUUID()}.$extension")
+        try {
+            val sourceStream = context.contentResolver.openInputStream(uri)
+                ?: return@withContext
+            sourceStream.use { input ->
+                destination.outputStream().use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var totalBytes = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        totalBytes += count
+                        require(totalBytes <= MAX_STICKER_BYTES)
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+            val now = System.currentTimeMillis()
+            val assetId = stickerPlacementDao.insertAsset(
+                StickerAssetEntity(
+                    kind = StickerAssetKind.IMAGE,
+                    source = destination.absolutePath,
+                    displayName = destination.name,
+                    createdAt = now,
+                ),
+            )
+            stickerPlacementDao.insert(
+                StickerPlacementEntity(
+                    date = date,
+                    assetId = assetId,
+                    sortOrder = stickerPlacementDao.nextSortOrder(date),
+                    createdAt = now,
+                ),
+            )
+        } catch (error: Exception) {
+            destination.delete()
+            throw error
+        }
+    }
+
     suspend fun deleteSticker(id: Long) = stickerPlacementDao.deleteById(id)
+
+    private companion object {
+        const val MAX_STICKER_BYTES = 10L * 1024L * 1024L
+    }
 }

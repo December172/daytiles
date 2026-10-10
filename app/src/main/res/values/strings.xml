@@ -27,4 +27,6 @@
     <string name="tap_to_edit">Tap to edit</string>
     <string name="custom_emoji">Custom emoji</string>
     <string name="custom_emoji_placeholder">Type or paste emoji</string>
+    <string name="import_sticker_image">Import PNG or WebP</string>
+    <string name="imported_stickers">Imported stickers</string>
 </resources>

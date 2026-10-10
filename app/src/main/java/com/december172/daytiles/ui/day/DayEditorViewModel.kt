@@ -1,5 +1,7 @@
 package com.december172.daytiles.ui.day
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -9,7 +11,8 @@ import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.DayRepository
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskEntity
-import com.december172.daytiles.data.local.StickerPlacementEntity
+import com.december172.daytiles.data.local.StickerPlacementWithAsset
+import com.december172.daytiles.data.local.StickerAssetEntity
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,7 +29,8 @@ data class DayEditorUiState(
     val date: LocalDate,
     val journalText: String,
     val tasks: List<TaskEntity>,
-    val stickers: List<StickerPlacementEntity>,
+    val stickers: List<StickerPlacementWithAsset>,
+    val stickerAssets: List<StickerAssetEntity>,
 )
 
 class DayEditorViewModel(
@@ -36,6 +40,7 @@ class DayEditorViewModel(
     private val journalText = MutableStateFlow("")
     private val tasks = repository.observeTasks(date)
     private val stickers = repository.observeStickers(date)
+    private val stickerAssets = repository.observeStickerAssets()
     private val saveMutex = Mutex()
     private var currentJournal: JournalEntryEntity? = null
     private var hasEditedJournal = false
@@ -44,12 +49,13 @@ class DayEditorViewModel(
         journalText,
         tasks,
         stickers,
-    ) { text, dayTasks, dayStickers ->
-        DayEditorUiState(date, text, dayTasks, dayStickers)
+        stickerAssets,
+    ) { text, dayTasks, dayStickers, assets ->
+        DayEditorUiState(date, text, dayTasks, dayStickers, assets)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = DayEditorUiState(date, "", emptyList(), emptyList()),
+        initialValue = DayEditorUiState(date, "", emptyList(), emptyList(), emptyList()),
     )
 
     init {
@@ -99,8 +105,18 @@ class DayEditorViewModel(
         viewModelScope.launch { repository.addSticker(date, symbol) }
     }
 
-    fun deleteSticker(sticker: StickerPlacementEntity) {
-        viewModelScope.launch { repository.deleteSticker(sticker.id) }
+    fun importImageSticker(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            runCatching { repository.importImageSticker(context, date, uri) }
+        }
+    }
+
+    fun addStickerAsset(asset: StickerAssetEntity) {
+        viewModelScope.launch { repository.placeStickerAsset(date, asset.id) }
+    }
+
+    fun deleteSticker(sticker: StickerPlacementWithAsset) {
+        viewModelScope.launch { repository.deleteSticker(sticker.placementId) }
     }
 
     companion object {

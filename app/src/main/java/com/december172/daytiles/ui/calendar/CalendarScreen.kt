@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -44,6 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import com.december172.daytiles.domain.model.DayContent
+import com.december172.daytiles.data.local.StickerAssetKind
+import coil3.compose.AsyncImage
+import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -312,18 +316,27 @@ private fun DayCell(
                 ) {
                     DateNumber(date.dayOfMonth, isToday)
                     Spacer(modifier = Modifier.weight(1f))
-                    content?.stickers?.take(if (compact) 1 else 2)?.forEach { sticker ->
+                    content?.stickers?.takeLast(1)?.forEach { sticker ->
                         val stickerDescription = stringResource(
                             R.string.sticker_accessibility,
-                            sticker.symbol,
+                            sticker.displayName,
                         )
-                        Text(
-                            text = sticker.symbol,
-                            modifier = Modifier.semantics {
-                                contentDescription = stickerDescription
-                            },
-                            fontSize = if (compact) 12.sp else 15.sp,
-                        )
+                        if (sticker.kind == StickerAssetKind.IMAGE) {
+                            AsyncImage(
+                                model = File(sticker.source),
+                                contentDescription = stickerDescription,
+                                modifier = Modifier.size(if (compact) 18.dp else 24.dp),
+                                contentScale = ContentScale.Fit,
+                            )
+                        } else {
+                            Text(
+                                text = sticker.source,
+                                modifier = Modifier.semantics {
+                                    contentDescription = stickerDescription
+                                },
+                                fontSize = if (compact) 12.sp else 15.sp,
+                            )
+                        }
                     }
                 }
                 if (isSelected && !compact) {
