@@ -86,20 +86,31 @@ class DayRepository(
         return savedId
     }
 
-    suspend fun addTask(date: LocalDate, title: String) {
+    suspend fun addTask(
+        date: LocalDate,
+        title: String,
+        details: String,
+        tags: String,
+        reminderAt: Long?,
+    ) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
         val now = System.currentTimeMillis()
-        val taskId = taskDao.insert(
-            TaskEntity(
-                date = date,
-                title = cleanTitle,
-                sortOrder = taskDao.nextSortOrder(date),
-                createdAt = now,
-                updatedAt = now,
-            ),
+        val task = TaskEntity(
+            date = date,
+            title = cleanTitle,
+            details = details.trim(),
+            tags = normalizeTaskTags(tags),
+            reminderAt = reminderAt,
+            sortOrder = taskDao.nextSortOrder(date),
+            createdAt = now,
+            updatedAt = now,
         )
-        if (taskId > 0) appContext?.let { TaskReminderScheduler.cancel(it, taskId) }
+        val taskId = taskDao.insert(task)
+        if (taskId > 0) appContext?.let {
+            if (reminderAt == null) TaskReminderScheduler.cancel(it, taskId)
+            else TaskReminderScheduler.schedule(it, task.copy(id = taskId))
+        }
         refreshWidgets()
     }
 
@@ -113,13 +124,22 @@ class DayRepository(
         refreshWidgets()
     }
 
-    suspend fun updateTask(task: TaskEntity, title: String, tags: String) {
+    suspend fun updateTask(task: TaskEntity, title: String, details: String, tags: String, reminderAt: Long?) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
         val cleanTags = normalizeTaskTags(tags)
-        val updated = task.copy(title = cleanTitle, tags = cleanTags, updatedAt = System.currentTimeMillis())
+        val updated = task.copy(
+            title = cleanTitle,
+            details = details.trim(),
+            tags = cleanTags,
+            reminderAt = reminderAt,
+            updatedAt = System.currentTimeMillis(),
+        )
         taskDao.update(updated)
-        if (task.reminderAt != null) appContext?.let { TaskReminderScheduler.schedule(it, updated) }
+        appContext?.let {
+            if (reminderAt == null) TaskReminderScheduler.cancel(it, task.id)
+            else TaskReminderScheduler.schedule(it, updated)
+        }
         refreshWidgets()
     }
 

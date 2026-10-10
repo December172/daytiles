@@ -97,10 +97,6 @@ class DayEditorViewModel(
         }
     }
 
-    fun addTask(title: String) {
-        viewModelScope.launch { repository.addTask(date, title) }
-    }
-
     fun setTaskCompleted(task: TaskEntity, completed: Boolean) {
         viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
@@ -109,12 +105,26 @@ class DayEditorViewModel(
         viewModelScope.launch { repository.setTaskReminder(task, reminderAt) }
     }
 
-    fun updateTask(task: TaskEntity, title: String, tags: String) {
-        viewModelScope.launch { repository.updateTask(task, title, tags) }
+    fun saveTask(
+        task: TaskEntity?,
+        title: String,
+        details: String,
+        tags: String,
+        reminderAt: Long?,
+        onSaved: () -> Unit,
+    ) {
+        viewModelScope.launch {
+            if (task == null) repository.addTask(date, title, details, tags, reminderAt)
+            else repository.updateTask(task, title, details, tags, reminderAt)
+            onSaved()
+        }
     }
 
-    fun deleteTask(task: TaskEntity) {
-        viewModelScope.launch { repository.deleteTask(task.id) }
+    fun deleteTask(task: TaskEntity, onDeleted: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.deleteTask(task.id)
+            onDeleted()
+        }
     }
 
     fun addSticker(symbol: String) {

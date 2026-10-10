@@ -14,9 +14,9 @@ The calendar provides a full-height month grid, date selection, and quick access
 
 - Full-height month calendar with month navigation, a Today shortcut, and selectable dates
 - Daily journal entries stored separately from tasks and stickers, with automatic saving
-- Dated tasks with add, edit, delete, completion, optional reminder alarms, and overdue indicators
-- Comma-separated task tags with visible labels and tag filtering in the task overview
-- Day editor popup for journal text, stickers, and tasks
+- Dated tasks with a dedicated full-screen create/edit form for title, details, tags, and optional reminder alarms
+- Task completion, deletion, due-date grouping, tag filtering, and overdue indicators in the task overview
+- Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
 - Calendar and Tasks bottom navigation, including a date-grouped task list
