@@ -126,43 +126,54 @@ private fun MonthHeader(
     val selectedLabel = remember(selectedDate, locale) {
         selectedDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
     }
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 10.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = monthTitle,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
+            Button(
+                onClick = onAddContent,
+                modifier = Modifier.size(40.dp),
+                contentPadding = ButtonDefaults.ContentPadding,
+            ) {
+                Text("+", fontSize = 20.sp)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = stringResource(R.string.selected_date, selectedLabel),
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
-        }
-        TextButton(onClick = onToday) {
-            Text(stringResource(R.string.today))
-        }
-        HeaderIconButton(
-            label = stringResource(R.string.previous_month),
-            symbol = "‹",
-            onClick = onPreviousMonth,
-        )
-        HeaderIconButton(
-            label = stringResource(R.string.next_month),
-            symbol = "›",
-            onClick = onNextMonth,
-        )
-        Button(
-            onClick = onAddContent,
-            modifier = Modifier.size(40.dp),
-            contentPadding = ButtonDefaults.ContentPadding,
-        ) {
-            Text("+", fontSize = 20.sp)
+            TextButton(onClick = onToday) {
+                Text(stringResource(R.string.today))
+            }
+            HeaderIconButton(
+                label = stringResource(R.string.previous_month),
+                symbol = "‹",
+                onClick = onPreviousMonth,
+            )
+            HeaderIconButton(
+                label = stringResource(R.string.next_month),
+                symbol = "›",
+                onClick = onNextMonth,
+            )
         }
     }
 }

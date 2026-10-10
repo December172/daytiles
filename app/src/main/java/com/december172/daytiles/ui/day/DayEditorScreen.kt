@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,6 +49,7 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onBack = onBack,
         onJournalChanged = viewModel::updateJournal,
         onAddTask = viewModel::addTask,
+        onUpdateTaskTitle = viewModel::updateTaskTitle,
         onTaskCompletedChanged = viewModel::setTaskCompleted,
         onDeleteTask = viewModel::deleteTask,
     )
@@ -58,10 +61,12 @@ fun DayEditorScreen(
     onBack: () -> Unit,
     onJournalChanged: (String) -> Unit,
     onAddTask: (String) -> Unit,
+    onUpdateTaskTitle: (TaskEntity, String) -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
     onDeleteTask: (TaskEntity) -> Unit,
 ) {
     var newTaskTitle by remember { mutableStateOf("") }
+    var taskBeingEdited by remember { mutableStateOf<TaskEntity?>(null) }
     val locale = LocalConfiguration.current.locales[0]
     val dateTitle = remember(uiState.date, locale) {
         uiState.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
@@ -82,8 +87,11 @@ fun DayEditorScreen(
                 TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
                 Text(
                     text = dateTitle,
-                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(stringResource(R.string.journal_heading), style = MaterialTheme.typography.titleMedium)
@@ -119,11 +127,26 @@ fun DayEditorScreen(
             }
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(uiState.tasks, key = { it.id }) { task ->
-                    TaskRow(task, onTaskCompletedChanged, onDeleteTask)
+                    TaskRow(
+                        task = task,
+                        onCompletedChanged = onTaskCompletedChanged,
+                        onEdit = { taskBeingEdited = task },
+                        onDelete = onDeleteTask,
+                    )
                     HorizontalDivider()
                 }
             }
         }
+    }
+    taskBeingEdited?.let { task ->
+        EditTaskDialog(
+            task = task,
+            onDismiss = { taskBeingEdited = null },
+            onSave = { title ->
+                onUpdateTaskTitle(task, title)
+                taskBeingEdited = null
+            },
+        )
     }
 }
 
@@ -131,6 +154,7 @@ fun DayEditorScreen(
 private fun TaskRow(
     task: TaskEntity,
     onCompletedChanged: (TaskEntity, Boolean) -> Unit,
+    onEdit: () -> Unit,
     onDelete: (TaskEntity) -> Unit,
 ) {
     Row(
@@ -148,6 +172,37 @@ private fun TaskRow(
             modifier = Modifier.weight(1f),
             textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
         )
+        TextButton(onClick = onEdit) { Text(stringResource(R.string.edit)) }
         TextButton(onClick = { onDelete(task) }) { Text(stringResource(R.string.delete)) }
     }
+}
+
+@Composable
+private fun EditTaskDialog(
+    task: TaskEntity,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var title by remember(task.id, task.title) { mutableStateOf(task.title) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit_task)) },
+        text = {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text(stringResource(R.string.task_title)) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(title) },
+                enabled = title.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
