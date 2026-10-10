@@ -20,4 +20,8 @@
     <string name="task_title">任务标题</string>
     <string name="cancel">取消</string>
     <string name="save">保存</string>
+    <string name="stickers_heading">贴纸</string>
+    <string name="add_sticker">+ 添加贴纸</string>
+    <string name="no_stickers">添加贴纸，让这一天更醒目。</string>
+    <string name="choose_sticker">选择贴纸</string>
 </resources>

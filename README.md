@@ -22,7 +22,13 @@ Milestone 2 provides:
 - Batched month queries so the calendar does not query each cell separately
 - Versioned Room schema export for future non-destructive migrations
 
-Sticker previews remain sample-only; persistent sticker assets and placements belong to Milestone 3.
+Milestone 3 begins with:
+
+- A built-in offline sticker palette
+- Room-backed sticker placements attached to individual dates
+- Adding and removing stickers from the daily editor
+- Persistent sticker previews in month cells
+- A non-destructive Room 1-to-2 migration that preserves existing journals and tasks
 
 ## Requirements
 
@@ -47,7 +53,7 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
 ```text
 app/src/main/java/com/december172/daytiles/
-├── data/              # Room, repositories, and temporary sticker samples
+├── data/              # Room persistence and repositories
 ├── domain/model/      # Independent journal, task, and sticker models
 └── ui/
     ├── calendar/      # Month state, date algorithms, and calendar UI

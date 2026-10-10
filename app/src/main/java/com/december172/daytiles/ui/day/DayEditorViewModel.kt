@@ -9,6 +9,7 @@ import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.DayRepository
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskEntity
+import com.december172.daytiles.data.local.StickerPlacementEntity
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +26,7 @@ data class DayEditorUiState(
     val date: LocalDate,
     val journalText: String,
     val tasks: List<TaskEntity>,
+    val stickers: List<StickerPlacementEntity>,
 )
 
 class DayEditorViewModel(
@@ -33,16 +35,21 @@ class DayEditorViewModel(
 ) : ViewModel() {
     private val journalText = MutableStateFlow("")
     private val tasks = repository.observeTasks(date)
+    private val stickers = repository.observeStickers(date)
     private val saveMutex = Mutex()
     private var currentJournal: JournalEntryEntity? = null
     private var hasEditedJournal = false
 
-    val uiState: StateFlow<DayEditorUiState> = combine(journalText, tasks) { text, dayTasks ->
-        DayEditorUiState(date, text, dayTasks)
+    val uiState: StateFlow<DayEditorUiState> = combine(
+        journalText,
+        tasks,
+        stickers,
+    ) { text, dayTasks, dayStickers ->
+        DayEditorUiState(date, text, dayTasks, dayStickers)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = DayEditorUiState(date, "", emptyList()),
+        initialValue = DayEditorUiState(date, "", emptyList(), emptyList()),
     )
 
     init {
@@ -86,6 +93,14 @@ class DayEditorViewModel(
 
     fun deleteTask(task: TaskEntity) {
         viewModelScope.launch { repository.deleteTask(task.id) }
+    }
+
+    fun addSticker(symbol: String) {
+        viewModelScope.launch { repository.addSticker(date, symbol) }
+    }
+
+    fun deleteSticker(sticker: StickerPlacementEntity) {
+        viewModelScope.launch { repository.deleteSticker(sticker.id) }
     }
 
     companion object {

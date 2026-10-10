@@ -7,7 +7,6 @@ import com.december172.daytiles.data.local.DayTilesDatabase
 class DayTilesApplication : Application() {
     val repository: DayRepository by lazy {
         val database = DayTilesDatabase.getInstance(this)
-        DayRepository(database.journalDao(), database.taskDao())
+        DayRepository(database.journalDao(), database.taskDao(), database.stickerPlacementDao())
     }
 }
-

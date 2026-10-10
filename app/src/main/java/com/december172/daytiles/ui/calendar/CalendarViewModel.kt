@@ -9,10 +9,11 @@ import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.DayRepository
 import com.december172.daytiles.data.local.JournalEntryEntity
 import com.december172.daytiles.data.local.TaskEntity
-import com.december172.daytiles.data.sample.SampleMonthContent
+import com.december172.daytiles.data.local.StickerPlacementEntity
 import com.december172.daytiles.domain.model.DayContent
 import com.december172.daytiles.domain.model.JournalPreview
 import com.december172.daytiles.domain.model.TaskPreview
+import com.december172.daytiles.domain.model.StickerPreview
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.math.min
@@ -39,8 +40,12 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
     private val selectedDate = MutableStateFlow(today)
 
     private val persistedContent: Flow<Map<LocalDate, DayContent>> = visibleMonth.flatMapLatest { month ->
-        combine(repository.observeJournals(month), repository.observeTasks(month)) { journals, tasks ->
-            mergeContent(month, journals, tasks)
+        combine(
+            repository.observeJournals(month),
+            repository.observeTasks(month),
+            repository.observeStickers(month),
+        ) { journals, tasks, stickers ->
+            mergeContent(journals, tasks, stickers)
         }
     }
 
@@ -57,7 +62,7 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
             visibleMonth = YearMonth.from(today),
             selectedDate = today,
             today = today,
-            contentByDate = mergeContent(YearMonth.from(today), emptyList(), emptyList()),
+            contentByDate = mergeContent(emptyList(), emptyList(), emptyList()),
         ),
     )
 
@@ -81,13 +86,13 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
     }
 
     private fun mergeContent(
-        month: YearMonth,
         journals: List<JournalEntryEntity>,
         tasks: List<TaskEntity>,
+        stickers: List<StickerPlacementEntity>,
     ): Map<LocalDate, DayContent> {
         val journalsByDate = journals.groupBy { it.date }
         val tasksByDate = tasks.groupBy { it.date }
-        val stickersByDate = SampleMonthContent.stickersForMonth(month)
+        val stickersByDate = stickers.groupBy { it.date }
         return (journalsByDate.keys + tasksByDate.keys + stickersByDate.keys).associateWith { date ->
             DayContent(
                 journal = journalsByDate[date]?.firstOrNull()?.let {
@@ -96,7 +101,9 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
                 tasks = tasksByDate[date].orEmpty().map {
                     TaskPreview(it.id.toString(), it.title, it.isCompleted)
                 },
-                stickers = stickersByDate[date].orEmpty(),
+                stickers = stickersByDate[date].orEmpty().map {
+                    StickerPreview(it.id.toString(), it.symbol)
+                },
             )
         }
     }
@@ -110,4 +117,3 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
         }
     }
 }
-
