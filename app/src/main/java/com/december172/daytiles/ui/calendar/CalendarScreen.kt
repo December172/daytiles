@@ -17,9 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -83,13 +81,22 @@ fun CalendarScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { onOpenDay(uiState.selectedDate) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+            ) {
+                Text("+", fontSize = 28.sp, fontWeight = FontWeight.Light)
+            }
+        },
     ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
-                .padding(horizontal = 10.dp)
-                .padding(bottom = 10.dp),
+                .padding(bottom = 4.dp),
         ) {
             MonthHeader(
                 month = uiState.visibleMonth,
@@ -97,7 +104,6 @@ fun CalendarScreen(
                 onPreviousMonth = onPreviousMonth,
                 onNextMonth = onNextMonth,
                 onToday = onToday,
-                onAddContent = { onOpenDay(uiState.selectedDate) },
             )
             WeekdayHeader()
             MonthGrid(
@@ -116,7 +122,6 @@ private fun MonthHeader(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onToday: () -> Unit,
-    onAddContent: () -> Unit,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val monthName = remember(month, locale) {
@@ -129,25 +134,29 @@ private fun MonthHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            HeaderIconButton(
+                label = stringResource(R.string.previous_month),
+                symbol = "‹",
+                onClick = onPreviousMonth,
+            )
             Text(
                 text = monthTitle,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
-            Button(
-                onClick = onAddContent,
-                modifier = Modifier.size(40.dp),
-                contentPadding = ButtonDefaults.ContentPadding,
-            ) {
-                Text("+", fontSize = 20.sp)
-            }
+            HeaderIconButton(
+                label = stringResource(R.string.next_month),
+                symbol = "›",
+                onClick = onNextMonth,
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -164,16 +173,6 @@ private fun MonthHeader(
             TextButton(onClick = onToday) {
                 Text(stringResource(R.string.today))
             }
-            HeaderIconButton(
-                label = stringResource(R.string.previous_month),
-                symbol = "‹",
-                onClick = onPreviousMonth,
-            )
-            HeaderIconButton(
-                label = stringResource(R.string.next_month),
-                symbol = "›",
-                onClick = onNextMonth,
-            )
         }
     }
 }
@@ -194,7 +193,8 @@ private fun WeekdayHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(30.dp),
+            .height(34.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)),
     ) {
         orderedWeekdays().forEach { dayOfWeek ->
             Text(
@@ -224,14 +224,14 @@ private fun MonthGrid(
     val weeks = remember(uiState.visibleMonth) { buildMonthWeeks(uiState.visibleMonth) }
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         weeks.forEach { week ->
             Row(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 week.forEach { date ->
                     if (date == null) {
@@ -257,8 +257,7 @@ private fun EmptyDayCell(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)),
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)),
     )
 }
 
@@ -276,7 +275,7 @@ private fun DayCell(
         date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
     }
     val border = when {
-        isSelected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        isSelected -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
         isToday -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary)
         else -> BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     }
@@ -290,7 +289,7 @@ private fun DayCell(
         modifier = modifier
             .fillMaxHeight()
             .semantics { contentDescription = dateDescription },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(2.dp),
         color = containerColor,
         border = border,
     ) {
