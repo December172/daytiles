@@ -25,12 +25,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class CalendarUiState(
     val visibleMonth: YearMonth,
     val selectedDate: LocalDate,
     val today: LocalDate,
     val contentByDate: Map<LocalDate, DayContent>,
+    val tasks: List<TaskEntity> = emptyList(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -49,12 +51,15 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
         }
     }
 
+    private val monthTasks: Flow<List<TaskEntity>> = visibleMonth.flatMapLatest(repository::observeTasks)
+
     val uiState: StateFlow<CalendarUiState> = combine(
         visibleMonth,
         selectedDate,
         persistedContent,
-    ) { month, selected, content ->
-        CalendarUiState(month, selected, today, content)
+        monthTasks,
+    ) { month, selected, content, tasks ->
+        CalendarUiState(month, selected, today, content, tasks)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -77,6 +82,15 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
 
     fun selectDate(date: LocalDate) {
         selectedDate.value = date
+    }
+
+    fun selectDateAndShow(date: LocalDate) {
+        selectedDate.value = date
+        visibleMonth.value = YearMonth.from(date)
+    }
+
+    fun setTaskCompleted(task: TaskEntity, completed: Boolean) {
+        viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
 
     private fun showMonth(month: YearMonth) {
