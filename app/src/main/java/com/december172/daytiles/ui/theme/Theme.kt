@@ -8,25 +8,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF765A47),
+    primary = Color(0xFFFF7A1A),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFF3DFCF),
-    onPrimaryContainer = Color(0xFF2B170B),
-    secondary = Color(0xFF6C5D45),
-    secondaryContainer = Color(0xFFF4E1BD),
-    surface = Color(0xFFFFF8F3),
-    surfaceVariant = Color(0xFFF1E6DD),
-    background = Color(0xFFFFF8F3),
+    primaryContainer = Color(0xFFFFE6D2),
+    onPrimaryContainer = Color(0xFF321300),
+    secondary = Color(0xFF5C6F91),
+    secondaryContainer = Color(0xFFDCE5F7),
+    surface = Color(0xFFFFFBF8),
+    surfaceVariant = Color(0xFFF5EEE9),
+    background = Color(0xFFFFFBF8),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFE3BFA5),
-    primaryContainer = Color(0xFF5B402F),
-    secondary = Color(0xFFD8C3A0),
-    secondaryContainer = Color(0xFF51462F),
-    surface = Color(0xFF1A120E),
-    surfaceVariant = Color(0xFF342A24),
-    background = Color(0xFF1A120E),
+    primary = Color(0xFFFFB77E),
+    primaryContainer = Color(0xFF713500),
+    secondary = Color(0xFFB7C7E8),
+    secondaryContainer = Color(0xFF344563),
+    surface = Color(0xFF19120E),
+    surfaceVariant = Color(0xFF382C25),
+    background = Color(0xFF19120E),
 )
 
 @Composable
@@ -39,4 +39,3 @@ fun DayTilesTheme(
         content = content,
     )
 }
-

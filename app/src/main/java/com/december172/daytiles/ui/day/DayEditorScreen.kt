@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,7 +78,7 @@ fun DayEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -94,46 +96,77 @@ fun DayEditorScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(stringResource(R.string.journal_heading), style = MaterialTheme.typography.titleMedium)
-            OutlinedTextField(
-                value = uiState.journalText,
-                onValueChange = onJournalChanged,
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        stringResource(R.string.journal_heading),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = uiState.journalText,
+                        onValueChange = onJournalChanged,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp),
+                        placeholder = { Text(stringResource(R.string.journal_placeholder)) },
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
-                placeholder = { Text(stringResource(R.string.journal_placeholder)) },
-            )
-            Spacer(Modifier.height(18.dp))
-            Text(stringResource(R.string.tasks_heading), style = MaterialTheme.typography.titleMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .weight(1f),
+                shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
             ) {
-                OutlinedTextField(
-                    value = newTaskTitle,
-                    onValueChange = { newTaskTitle = it },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.add_task_placeholder)) },
-                )
-                Button(
-                    onClick = {
-                        onAddTask(newTaskTitle)
-                        newTaskTitle = ""
-                    },
-                    enabled = newTaskTitle.isNotBlank(),
-                ) { Text(stringResource(R.string.add)) }
-            }
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(uiState.tasks, key = { it.id }) { task ->
-                    TaskRow(
-                        task = task,
-                        onCompletedChanged = onTaskCompletedChanged,
-                        onEdit = { taskBeingEdited = task },
-                        onDelete = onDeleteTask,
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Text(
+                        stringResource(R.string.tasks_heading),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                    HorizontalDivider()
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = newTaskTitle,
+                            onValueChange = { newTaskTitle = it },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            placeholder = { Text(stringResource(R.string.add_task_placeholder)) },
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        Button(
+                            onClick = {
+                                onAddTask(newTaskTitle)
+                                newTaskTitle = ""
+                            },
+                            enabled = newTaskTitle.isNotBlank(),
+                        ) { Text(stringResource(R.string.add)) }
+                    }
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        items(uiState.tasks, key = { it.id }) { task ->
+                            TaskRow(
+                                task = task,
+                                onCompletedChanged = onTaskCompletedChanged,
+                                onEdit = { taskBeingEdited = task },
+                                onDelete = onDeleteTask,
+                            )
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
                 }
             }
         }
