@@ -34,4 +34,8 @@
     <string name="remote_sticker_url_placeholder">粘贴 PNG 或 WebP 的 HTTPS 直链</string>
     <string name="download_remote_sticker">从网址下载</string>
     <string name="remote_sticker_error">无法从该网址下载 PNG 或 WebP。</string>
+    <string name="calendar_tab">日历</string>
+    <string name="tasks_tab">待办</string>
+    <string name="no_tasks_this_month">本月还没有待办事项。</string>
+    <string name="open_day">打开日期</string>
 </resources>

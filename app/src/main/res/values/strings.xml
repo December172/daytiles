@@ -34,4 +34,8 @@
     <string name="remote_sticker_url_placeholder">Paste a direct HTTPS PNG or WebP URL</string>
     <string name="download_remote_sticker">Download from URL</string>
     <string name="remote_sticker_error">Could not download this PNG or WebP URL.</string>
+    <string name="calendar_tab">Calendar</string>
+    <string name="tasks_tab">Tasks</string>
+    <string name="no_tasks_this_month">No tasks this month yet.</string>
+    <string name="open_day">Open day</string>
 </resources>

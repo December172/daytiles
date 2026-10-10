@@ -35,6 +35,34 @@ Milestone 3 begins with:
 - A select-then-tap-again shortcut that opens the daily editor as a popup over the month
 - Non-destructive Room migrations through v3 that preserve existing content
 
+## Roadmap
+
+### Milestone 4 — Daily workflow and navigation (in progress)
+
+- Shape the month screen, daily task list, and quick actions around the on-device reference app
+- Add a compact bottom navigation bar for Calendar and Tasks
+- Create a dedicated task overview with date grouping, completion toggles, and shortcuts into the day popup
+- Keep the month calendar as the primary screen and open day details in a dismissible popup
+
+Implemented in this milestone:
+
+- Calendar and Tasks bottom navigation
+- Month-scoped task overview grouped by date, with completion toggles and day-popup shortcuts
+- Compact, scrollable day editor popup
+
+### Milestone 5 — Home screen widgets
+
+- Add an at-a-glance month or agenda widget backed by persisted DayTiles content
+- Provide a quick-add task action from the widget
+- Refresh widgets after task, journal, or sticker changes
+- Verify widget date navigation and rendering across device sizes
+
+### Milestone 6 — Refinement
+
+- Improve task ordering and overdue/today affordances
+- Add accessibility labels and compact-screen layout checks
+- Review import failure states and local sticker library management
+
 ## Requirements
 
 - JDK 17 or newer (Java 17 source target)

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
@@ -87,8 +89,9 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
 fun DayEditorPopup(date: LocalDate, onDismiss: () -> Unit) {
     Surface(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 40.dp),
+            .fillMaxWidth()
+            .fillMaxHeight(0.9f)
+            .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(24.dp),
         tonalElevation = 8.dp,
     ) {
@@ -123,6 +126,7 @@ fun DayEditorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = 12.dp),
         ) {
@@ -160,7 +164,7 @@ fun DayEditorScreen(
                         onValueChange = onJournalChanged,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(160.dp),
+                            .heightIn(min = 96.dp, max = 160.dp),
                         placeholder = { Text(stringResource(R.string.journal_placeholder)) },
                         shape = RoundedCornerShape(14.dp),
                     )
@@ -222,7 +226,11 @@ fun DayEditorScreen(
                 shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
             ) {
-                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                        .heightIn(max = 420.dp),
+                ) {
                     Text(
                         stringResource(R.string.tasks_heading),
                         style = MaterialTheme.typography.titleMedium,
@@ -250,7 +258,7 @@ fun DayEditorScreen(
                             enabled = newTaskTitle.isNotBlank(),
                         ) { Text(stringResource(R.string.add)) }
                     }
-                    LazyColumn(modifier = Modifier.weight(1f)) {
+                    LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
                         items(uiState.tasks, key = { it.id }) { task ->
                             TaskRow(
                                 task = task,

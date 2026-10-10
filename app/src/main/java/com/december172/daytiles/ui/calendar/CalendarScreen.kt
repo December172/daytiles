@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,9 +27,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import com.december172.daytiles.domain.model.DayContent
+import com.december172.daytiles.data.local.TaskEntity
 import com.december172.daytiles.data.local.StickerAssetKind
 import coil3.compose.AsyncImage
 import java.io.File
@@ -61,6 +68,7 @@ fun CalendarRoute(
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectedTab by remember { mutableStateOf(CalendarTab.CALENDAR) }
     CalendarScreen(
         uiState = uiState,
         onPreviousMonth = viewModel::showPreviousMonth,
@@ -68,8 +76,14 @@ fun CalendarRoute(
         onToday = viewModel::showToday,
         onDateSelected = viewModel::selectDate,
         onOpenDay = onOpenDay,
+        selectedTab = selectedTab,
+        tasks = uiState.tasks,
+        onTabSelected = { selectedTab = it },
+        onTaskCompletedChanged = viewModel::setTaskCompleted,
     )
 }
+
+enum class CalendarTab { CALENDAR, TASKS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,11 +94,31 @@ fun CalendarScreen(
     onToday: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    selectedTab: CalendarTab = CalendarTab.CALENDAR,
+    tasks: List<TaskEntity> = emptyList(),
+    onTabSelected: (CalendarTab) -> Unit = {},
+    onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = selectedTab == CalendarTab.CALENDAR,
+                    onClick = { onTabSelected(CalendarTab.CALENDAR) },
+                    icon = { Text("▦") },
+                    label = { Text(stringResource(R.string.calendar_tab)) },
+                )
+                NavigationBarItem(
+                    selected = selectedTab == CalendarTab.TASKS,
+                    onClick = { onTabSelected(CalendarTab.TASKS) },
+                    icon = { Text("✓") },
+                    label = { Text(stringResource(R.string.tasks_tab)) },
+                )
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onOpenDay(uiState.selectedDate) },
@@ -102,20 +136,111 @@ fun CalendarScreen(
                 .padding(contentPadding)
                 .padding(bottom = 4.dp),
         ) {
-            MonthHeader(
-                month = uiState.visibleMonth,
-                selectedDate = uiState.selectedDate,
-                onPreviousMonth = onPreviousMonth,
-                onNextMonth = onNextMonth,
-                onToday = onToday,
+            if (selectedTab == CalendarTab.CALENDAR) {
+                MonthHeader(
+                    month = uiState.visibleMonth,
+                    selectedDate = uiState.selectedDate,
+                    onPreviousMonth = onPreviousMonth,
+                    onNextMonth = onNextMonth,
+                    onToday = onToday,
+                )
+                WeekdayHeader()
+                MonthGrid(
+                    uiState = uiState,
+                    onDateSelected = onDateSelected,
+                    onOpenDay = onOpenDay,
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                TaskOverview(
+                    month = uiState.visibleMonth,
+                    tasks = tasks,
+                    onPreviousMonth = onPreviousMonth,
+                    onNextMonth = onNextMonth,
+                    onTaskCompletedChanged = onTaskCompletedChanged,
+                    onOpenDay = { date ->
+                        onDateSelected(date)
+                        onOpenDay(date)
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaskOverview(
+    month: YearMonth,
+    tasks: List<TaskEntity>,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            HeaderIconButton(stringResource(R.string.previous_month), "‹", onPreviousMonth)
+            Text(
+                text = stringResource(
+                    R.string.month_title,
+                    month.month.getDisplayName(TextStyle.FULL, LocalConfiguration.current.locales[0]),
+                    month.year,
+                ),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
             )
-            WeekdayHeader()
-            MonthGrid(
-                uiState = uiState,
-                onDateSelected = onDateSelected,
-                onOpenDay = onOpenDay,
-                modifier = Modifier.weight(1f),
+            HeaderIconButton(stringResource(R.string.next_month), "›", onNextMonth)
+        }
+        if (tasks.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_tasks_this_month),
+                modifier = Modifier.padding(24.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                tasks.groupBy { it.date }.forEach { (date, dayTasks) ->
+                    item(key = "header-$date") {
+                        TextButton(onClick = { onOpenDay(date) }) {
+                            Text(
+                                date.format(
+                                    DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+                                        .withLocale(LocalConfiguration.current.locales[0]),
+                                ),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                    items(
+                        items = dayTasks,
+                        key = { task -> task.id },
+                    ) { task ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.Checkbox(
+                                checked = task.isCompleted,
+                                onCheckedChange = { onTaskCompletedChanged(task, it) },
+                            )
+                            Text(
+                                task.title,
+                                modifier = Modifier.weight(1f),
+                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                            )
+                            TextButton(onClick = { onOpenDay(date) }) {
+                                Text(stringResource(R.string.open_day))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
