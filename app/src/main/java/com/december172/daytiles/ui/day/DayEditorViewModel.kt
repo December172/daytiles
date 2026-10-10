@@ -80,6 +80,10 @@ class DayEditorViewModel(
         viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
 
+    fun updateTaskTitle(task: TaskEntity, title: String) {
+        viewModelScope.launch { repository.updateTaskTitle(task, title) }
+    }
+
     fun deleteTask(task: TaskEntity) {
         viewModelScope.launch { repository.deleteTask(task.id) }
     }
@@ -93,4 +97,3 @@ class DayEditorViewModel(
         }
     }
 }
-

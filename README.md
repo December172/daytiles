@@ -16,7 +16,7 @@ Milestone 1 established the single-module Jetpack Compose application with:
 Milestone 2 provides:
 
 - Room-backed plain-text daily journals with automatic saving
-- Persistent daily tasks with add, delete, and completion controls
+- Persistent daily tasks with add, edit, delete, and completion controls
 - Stable task ordering and completed-task strikethrough
 - A dedicated day editor reached from the selected calendar date
 - Batched month queries so the calendar does not query each cell separately

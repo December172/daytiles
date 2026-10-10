@@ -15,4 +15,9 @@
     <string name="add_task_placeholder">Add a task</string>
     <string name="add">Add</string>
     <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="edit_task">Edit task</string>
+    <string name="task_title">Task title</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
 </resources>

@@ -53,6 +53,11 @@ class DayRepository(
         taskDao.update(task.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
     }
 
+    suspend fun updateTaskTitle(task: TaskEntity, title: String) {
+        val cleanTitle = title.trim()
+        if (cleanTitle.isEmpty()) return
+        taskDao.update(task.copy(title = cleanTitle, updatedAt = System.currentTimeMillis()))
+    }
+
     suspend fun deleteTask(id: Long) = taskDao.deleteById(id)
 }
-
