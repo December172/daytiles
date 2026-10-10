@@ -24,8 +24,19 @@ class TodoWidgetProvider : AppWidgetProvider() {
         if (intent.action != ACTION_TOGGLE) return
         val taskId = intent.getLongExtra(EXTRA_TASK_ID, 0)
         val completed = intent.getBooleanExtra(EXTRA_COMPLETED, false)
+        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            (context.applicationContext as DayTilesApplication).repository.setTaskCompletedById(taskId, completed)
+            try {
+                (context.applicationContext as DayTilesApplication).repository.setTaskCompletedById(taskId, completed)
+                val manager = AppWidgetManager.getInstance(context)
+                val component = ComponentName(context, TodoWidgetProvider::class.java)
+                manager.notifyAppWidgetViewDataChanged(
+                    manager.getAppWidgetIds(component),
+                    R.id.todo_widget_list,
+                )
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 

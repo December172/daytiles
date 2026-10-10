@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -112,13 +116,67 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
 fun DayEditorPopup(date: LocalDate, onDismiss: () -> Unit) {
     Surface(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.94f)
             .fillMaxHeight(0.9f)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(24.dp),
         tonalElevation = 8.dp,
     ) {
         DayEditorRoute(date = date, onBack = onDismiss)
+    }
+}
+
+@Composable
+fun JournalQuickEntryPopup(date: LocalDate, onDismiss: () -> Unit) {
+    val viewModel: DayEditorViewModel = viewModel(
+        key = "journal-quick-entry-$date",
+        factory = DayEditorViewModel.factory(date),
+    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(150)
+        focusRequester.requestFocus()
+        keyboard?.show()
+    }
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth(0.94f)
+            .fillMaxHeight(0.55f),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 8.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+                        .withLocale(LocalConfiguration.current.locales[0])),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = uiState.journalText,
+                onValueChange = viewModel::updateJournal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .focusRequester(focusRequester),
+                placeholder = { Text(stringResource(R.string.journal_placeholder)) },
+                shape = RoundedCornerShape(16.dp),
+            )
+        }
     }
 }
 
@@ -282,7 +340,11 @@ fun DayEditorScreen(
                             enabled = newTaskTitle.isNotBlank(),
                         ) { Text(stringResource(R.string.add)) }
                     }
-                    LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 280.dp),
+                    ) {
                         items(uiState.tasks, key = { it.id }) { task ->
                             TaskRow(
                                 task = task,
@@ -339,22 +401,30 @@ private fun TaskRow(
     onEdit: () -> Unit,
     onDelete: (TaskEntity) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(
-            checked = task.isCompleted,
-            onCheckedChange = { onCompletedChanged(task, it) },
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = task.isCompleted,
+                onCheckedChange = { onCompletedChanged(task, it) },
+            )
+            Text(
+                text = task.title,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+            )
+        }
         val context = LocalContext.current
-        Text(
-            text = task.title,
-            modifier = Modifier.weight(1f),
-            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
         TextButton(onClick = {
             if (task.reminderAt != null) {
                 onSetReminder(null)
@@ -386,6 +456,7 @@ private fun TaskRow(
         }
         TextButton(onClick = onEdit) { Text(stringResource(R.string.edit)) }
         TextButton(onClick = { onDelete(task) }) { Text(stringResource(R.string.delete)) }
+        }
     }
 }
 

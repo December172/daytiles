@@ -42,13 +42,13 @@ private class TodoViewsFactory(
         return RemoteViews(service.packageName, R.layout.widget_todo_row).apply {
             setTextViewText(R.id.todo_row_checkbox, "○")
             setContentDescription(
-                R.id.todo_row_checkbox,
+                R.id.todo_row_root,
                 service.getString(R.string.todo_checkbox_accessibility, task.title),
             )
             setTextViewText(R.id.todo_row_title, task.title)
             setTextViewText(R.id.todo_row_meta, DayTilesWidgetProvider.taskSummary(service, task))
             setOnClickFillInIntent(
-                R.id.todo_row_checkbox,
+                R.id.todo_row_root,
                 Intent()
                     .putExtra(TodoWidgetProvider.EXTRA_TASK_ID, task.id)
                     .putExtra(TodoWidgetProvider.EXTRA_COMPLETED, true),

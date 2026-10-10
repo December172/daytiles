@@ -38,11 +38,13 @@
     <string name="tasks_tab">Tasks</string>
     <string name="no_tasks_this_month">No tasks this month yet.</string>
     <string name="open_day">Open day</string>
-    <string name="widget_name">DayTiles tasks</string>
-    <string name="widget_description">A compact list of your next open tasks</string>
+    <string name="widget_name">DayTiles daily notes</string>
+    <string name="widget_description">Read and edit the journal entry for today</string>
     <string name="widget_loading">Loading tasks…</string>
     <string name="widget_no_tasks">No open tasks yet.</string>
     <string name="widget_add_task">+ Add</string>
+    <string name="journal_widget_edit">Write a note for today</string>
+    <string name="journal_widget_empty">Tap to write a note for today.</string>
     <string name="widget_refresh">Refresh</string>
     <string name="todo_widget_name">DayTiles todo list</string>
     <string name="todo_widget_description">All open tasks with checkboxes and reminders</string>
