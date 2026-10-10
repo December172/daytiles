@@ -9,6 +9,7 @@
     <string name="date_accessibility">%1$s</string>
     <string name="sticker_accessibility">Sticker %1$s</string>
     <string name="back">‹ Back</string>
+    <string name="close">Close</string>
     <string name="journal_heading">Journal</string>
     <string name="journal_placeholder">Write about your day…</string>
     <string name="tasks_heading">Tasks</string>
@@ -29,4 +30,8 @@
     <string name="custom_emoji_placeholder">Type or paste emoji</string>
     <string name="import_sticker_image">Import PNG or WebP</string>
     <string name="imported_stickers">Imported stickers</string>
+    <string name="remote_sticker_url">Sticker URL</string>
+    <string name="remote_sticker_url_placeholder">Paste a direct HTTPS PNG or WebP URL</string>
+    <string name="download_remote_sticker">Download from URL</string>
+    <string name="remote_sticker_error">Could not download this PNG or WebP URL.</string>
 </resources>

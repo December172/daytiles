@@ -31,7 +31,10 @@ data class DayEditorUiState(
     val tasks: List<TaskEntity>,
     val stickers: List<StickerPlacementWithAsset>,
     val stickerAssets: List<StickerAssetEntity>,
+    val remoteStickerState: RemoteStickerState,
 )
+
+enum class RemoteStickerState { IDLE, DOWNLOADING, ERROR }
 
 class DayEditorViewModel(
     private val date: LocalDate,
@@ -41,6 +44,7 @@ class DayEditorViewModel(
     private val tasks = repository.observeTasks(date)
     private val stickers = repository.observeStickers(date)
     private val stickerAssets = repository.observeStickerAssets()
+    private val remoteStickerState = MutableStateFlow(RemoteStickerState.IDLE)
     private val saveMutex = Mutex()
     private var currentJournal: JournalEntryEntity? = null
     private var hasEditedJournal = false
@@ -50,12 +54,20 @@ class DayEditorViewModel(
         tasks,
         stickers,
         stickerAssets,
-    ) { text, dayTasks, dayStickers, assets ->
-        DayEditorUiState(date, text, dayTasks, dayStickers, assets)
+        remoteStickerState,
+    ) { text, dayTasks, dayStickers, assets, downloadState ->
+        DayEditorUiState(date, text, dayTasks, dayStickers, assets, downloadState)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = DayEditorUiState(date, "", emptyList(), emptyList(), emptyList()),
+        initialValue = DayEditorUiState(
+            date,
+            "",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            RemoteStickerState.IDLE,
+        ),
     )
 
     init {
@@ -108,6 +120,25 @@ class DayEditorViewModel(
     fun importImageSticker(context: Context, uri: Uri) {
         viewModelScope.launch {
             runCatching { repository.importImageSticker(context, date, uri) }
+        }
+    }
+
+    fun importRemoteImageSticker(context: Context, url: String) {
+        if (remoteStickerState.value == RemoteStickerState.DOWNLOADING) return
+        remoteStickerState.value = RemoteStickerState.DOWNLOADING
+        viewModelScope.launch {
+            remoteStickerState.value = runCatching {
+                repository.importRemoteImageSticker(context, date, url)
+            }.fold(
+                onSuccess = { RemoteStickerState.IDLE },
+                onFailure = { RemoteStickerState.ERROR },
+            )
+        }
+    }
+
+    fun clearRemoteStickerError() {
+        if (remoteStickerState.value == RemoteStickerState.ERROR) {
+            remoteStickerState.value = RemoteStickerState.IDLE
         }
     }
 

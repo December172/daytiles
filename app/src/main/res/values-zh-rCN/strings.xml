@@ -9,6 +9,7 @@
     <string name="date_accessibility">%1$s</string>
     <string name="sticker_accessibility">贴纸 %1$s</string>
     <string name="back">‹ 返回</string>
+    <string name="close">关闭</string>
     <string name="journal_heading">今日日记</string>
     <string name="journal_placeholder">写下今天发生的事……</string>
     <string name="tasks_heading">任务</string>
@@ -29,4 +30,8 @@
     <string name="custom_emoji_placeholder">输入或粘贴 Emoji</string>
     <string name="import_sticker_image">导入 PNG 或 WebP</string>
     <string name="imported_stickers">已导入贴纸</string>
+    <string name="remote_sticker_url">贴纸网址</string>
+    <string name="remote_sticker_url_placeholder">粘贴 PNG 或 WebP 的 HTTPS 直链</string>
+    <string name="download_remote_sticker">从网址下载</string>
+    <string name="remote_sticker_error">无法从该网址下载 PNG 或 WebP。</string>
 </resources>

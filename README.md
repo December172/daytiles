@@ -28,10 +28,11 @@ Milestone 3 begins with:
 - Custom emoji stickers entered or pasted by the user
 - Reusable sticker assets separated from date-specific placements
 - Local PNG/WebP importing into private offline app storage
+- User-provided HTTPS PNG/WebP URLs downloaded into the same private offline cache
 - Room-backed sticker placements attached to individual dates
 - Adding and removing stickers from the daily editor
 - Persistent sticker previews in month cells
-- A select-then-tap-again shortcut from a month cell to its daily editor
+- A select-then-tap-again shortcut that opens the daily editor as a popup over the month
 - Non-destructive Room migrations through v3 that preserve existing content
 
 ## Requirements
@@ -67,7 +68,7 @@ app/src/main/java/com/december172/daytiles/
 
 ## Privacy and connectivity
 
-Core functionality is fully offline. DayTiles contains no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
+Core functionality is fully offline. Optional user-requested sticker downloads require internet access, then remain available from private local storage. DayTiles contains no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
 
 ## Credits
 
