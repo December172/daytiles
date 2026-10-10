@@ -16,6 +16,7 @@ data class TaskEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val date: LocalDate,
     val title: String,
+    val tags: String = "",
     val isCompleted: Boolean = false,
     val reminderAt: Long? = null,
     val sortOrder: Int,

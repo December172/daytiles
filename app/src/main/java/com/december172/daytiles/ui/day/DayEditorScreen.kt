@@ -90,7 +90,7 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onBack = onBack,
         onJournalChanged = viewModel::updateJournal,
         onAddTask = viewModel::addTask,
-        onUpdateTaskTitle = viewModel::updateTaskTitle,
+        onUpdateTask = viewModel::updateTask,
         onTaskCompletedChanged = viewModel::setTaskCompleted,
         onSetTaskReminder = { task, reminderAt ->
             if (reminderAt != null && Build.VERSION.SDK_INT >= 33 &&
@@ -186,7 +186,7 @@ fun DayEditorScreen(
     onBack: () -> Unit,
     onJournalChanged: (String) -> Unit,
     onAddTask: (String) -> Unit,
-    onUpdateTaskTitle: (TaskEntity, String) -> Unit,
+    onUpdateTask: (TaskEntity, String, String) -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
     onSetTaskReminder: (TaskEntity, Long?) -> Unit,
     onDeleteTask: (TaskEntity) -> Unit,
@@ -364,8 +364,8 @@ fun DayEditorScreen(
         EditTaskDialog(
             task = task,
             onDismiss = { taskBeingEdited = null },
-            onSave = { title ->
-                onUpdateTaskTitle(task, title)
+            onSave = { title, tags ->
+                onUpdateTask(task, title, tags)
                 taskBeingEdited = null
             },
         )
@@ -419,6 +419,16 @@ private fun TaskRow(
                 textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
             )
         }
+        if (task.tags.isNotBlank()) {
+            Text(
+                text = task.tags.split(',').joinToString("  ·  "),
+                modifier = Modifier.padding(start = 56.dp, bottom = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.tertiary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         val context = LocalContext.current
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -464,23 +474,33 @@ private fun TaskRow(
 private fun EditTaskDialog(
     task: TaskEntity,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit,
+    onSave: (String, String) -> Unit,
 ) {
     var title by remember(task.id, task.title) { mutableStateOf(task.title) }
+    var tags by remember(task.id, task.tags) { mutableStateOf(task.tags.split(',').joinToString(", ")) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.edit_task)) },
         text = {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text(stringResource(R.string.task_title)) },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.task_title)) },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = tags,
+                    onValueChange = { tags = it },
+                    label = { Text(stringResource(R.string.task_tags)) },
+                    supportingText = { Text(stringResource(R.string.task_tags_hint)) },
+                    singleLine = true,
+                )
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(title) },
+                onClick = { onSave(title, tags) },
                 enabled = title.isNotBlank(),
             ) { Text(stringResource(R.string.save)) }
         },

@@ -19,6 +19,10 @@
     <string name="edit">Edit</string>
     <string name="edit_task">Edit task</string>
     <string name="task_title">Task title</string>
+    <string name="task_tags">Tags</string>
+    <string name="task_tags_hint">Separate tags with commas</string>
+    <string name="all_tags">All tags</string>
+    <string name="no_tasks_for_tag">No tasks match this tag.</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="stickers_heading">Stickers</string>

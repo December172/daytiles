@@ -19,6 +19,10 @@
     <string name="edit">编辑</string>
     <string name="edit_task">编辑任务</string>
     <string name="task_title">任务标题</string>
+    <string name="task_tags">标签</string>
+    <string name="task_tags_hint">多个标签请用逗号分隔</string>
+    <string name="all_tags">全部标签</string>
+    <string name="no_tasks_for_tag">没有符合此标签的任务。</string>
     <string name="cancel">取消</string>
     <string name="save">保存</string>
     <string name="stickers_heading">贴纸</string>

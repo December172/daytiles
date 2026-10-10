@@ -1,92 +1,64 @@
 # DayTiles
 
-DayTiles is a free, open-source, offline-first Android visual calendar, journal, and daily planner. Its primary interface is an expanded month view where stickers, journal previews, and checkable tasks appear directly inside each day tile.
+DayTiles is a free, open-source, offline-first Android calendar, journal, and visual planner. The month calendar is the home for dated notes, stickers, and checkable tasks. The app is built with Kotlin, Jetpack Compose, Room, and Material 3.
 
-## Current status
+## Screenshots
 
-Milestone 1 established the single-module Jetpack Compose application with:
+### Month calendar
 
-- An adaptive four-to-six-week month layout
-- Previous month, next month, today, and date selection controls
-- Large day cells that adjust preview density to available height
-- Separate journal, task, and sticker preview models
-- Light and dark Material 3 themes
-- English as the default language and Simplified Chinese (`zh-CN`) resources
+The calendar provides a full-height month grid, date selection, and quick access to the selected day.
 
-Milestone 2 provides:
+![DayTiles month calendar](docs/screenshots/month-view.png)
 
-- Room-backed plain-text daily journals with automatic saving
-- Persistent daily tasks with add, edit, delete, and completion controls
-- Stable task ordering and completed-task strikethrough
-- A dedicated day editor reached from the selected calendar date
-- Batched month queries so the calendar does not query each cell separately
-- Versioned Room schema export for future non-destructive migrations
+## Features
 
-Milestone 3 begins with:
+- Full-height month calendar with month navigation, a Today shortcut, and selectable dates
+- Daily journal entries stored separately from tasks and stickers, with automatic saving
+- Dated tasks with add, edit, delete, completion, optional reminder alarms, and overdue indicators
+- Comma-separated task tags with visible labels and tag filtering in the task overview
+- Day editor popup for journal text, stickers, and tasks
+- Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
+- Reusable sticker library with date-specific sticker placements and calendar-cell previews
+- Calendar and Tasks bottom navigation, including a date-grouped task list
+- Three Android home-screen widgets:
+  - Todo list with open tasks, due dates, reminder times, and completion actions
+  - Daily journal preview with a one-tap editor for today's entry
+  - Compact localized month calendar with today's date highlighted
+- English as the default language and Simplified Chinese (`zh-CN`) localization
+- Offline-first storage, with no account, ads, analytics, tracking, cloud sync, or backend
 
-- A built-in offline sticker palette
-- Custom emoji stickers entered or pasted by the user
-- Reusable sticker assets separated from date-specific placements
-- Local PNG/WebP importing into private offline app storage
-- User-provided HTTPS PNG/WebP URLs downloaded into the same private offline cache
-- Room-backed sticker placements attached to individual dates
-- Adding and removing stickers from the daily editor
-- Persistent sticker previews in month cells
-- A select-then-tap-again shortcut that opens the daily editor as a popup over the month
-- Non-destructive Room migrations through v3 that preserve existing content
+## Planned features (TODO)
 
-## Roadmap
+The following work is intentionally split into small steps. Implement and verify one item at a time; do not bundle the whole list into one release.
 
-### Milestone 4 — Daily workflow and navigation (in progress)
+### Task organization
 
-- Shape the month screen, daily task list, and quick actions around the on-device reference app
-- Add a compact bottom navigation bar for Calendar and Tasks
-- Create a dedicated task overview with date grouping, completion toggles, and shortcuts into the day popup
-- Keep the month calendar as the primary screen and open day details in a dismissible popup
+- [ ] **Subtasks** — support a parent task with an ordered checklist of child tasks, including completion state and a clear parent progress summary. Preserve existing tasks during the Room schema migration.
+- [ ] **Task targets and aims** — define daily and weekly goals (for example, a target number of completed tasks), show progress toward each goal, and provide a compact goal/punch-card view. Keep goal records distinct from journal entries and tasks.
+- [ ] **Four-quadrant prioritization** — optionally classify tasks by importance and urgency, then provide a separate Eisenhower-style view. Avoid forcing this model on ordinary task entry.
 
-Implemented in this milestone:
+### Navigation and calendar views
 
-- Calendar and Tasks bottom navigation
-- Month-scoped task overview grouped by date, with completion toggles and day-popup shortcuts
-- Compact, scrollable day editor popup
+- [ ] **Side menu** — add a navigation drawer for secondary areas such as settings, tags, goals, and help. Keep the calendar and task list directly accessible and retain a simple small-screen experience.
+- [ ] **Week view** — add a week-at-a-glance screen with dated tasks and journal snippets, then expose a compact week-view home-screen widget.
+- [ ] **Schedule and recurring items** — add an optional schedule view for recurring commitments, starting with a course planner for class names, weekdays, start/end times, locations, and local reminders. Keep course sessions distinct from journal entries and tasks.
 
-### Milestone 5 — Home screen widgets (complete)
+### Focus and home-screen widgets
 
-- Provide three independent widgets: scrollable todo list, daily journal input, and small month view
-- Let users check off todo items directly from the list widget
-- Support optional local reminder alarms for tasks and show reminder times in the list widget
-- Refresh all widgets after task edits and preserve reminders across device restarts
-
-Implemented in this milestone:
-
-- Scrollable todo widget containing every open task, checkbox actions, due dates, and optional reminder times
-- Daily journal widget with today's note preview and a one-tap focused editor
-- Small current-month widget with localized weekday headings and today's date highlighted
-- Optional task reminders with Android notification permission handling and reboot rescheduling
-- Shared widget refresh after task creation, completion changes, reminder changes, title edits, and deletion
-
-### Milestone 6 — Interaction and visual refinement (in progress)
-
-- Improve task ordering and overdue/today affordances
-- Add accessibility labels and compact-screen layout checks
-- Refine the month, todo, bottom bar, and widget visual system using the on-device reference
-- Review import failure states and local sticker library management
-
-Started in this milestone:
-
-- Add localized Today and Overdue affordances to the task overview and todo list widget
-- Add an accessibility description to todo-widget completion controls
-
-## Requirements
-
-- JDK 17 or newer (Java 17 source target)
-- Android SDK 37
-- Android SDK Build Tools 36.0.0
-- The checked-in Gradle Wrapper; no system Gradle installation is required
-
-Dependency versions are centralized in `gradle/libs.versions.toml`.
+- [ ] **Focus clock** — add an offline focus timer with configurable work/break durations, pause/resume, and a persistent notification; allow an optional link to a task.
+- [ ] **Focus clock widget** — add a compact widget for starting or checking the active focus session.
+- [ ] **Widget layout options** — offer useful compact and expanded variants for the existing todo, journal, and month widgets, then add the week widget when week view is available.
 
 ## Build and test
+
+Requirements:
+
+- JDK 17 or newer
+- Android SDK 37
+- Android SDK Build Tools 36.0.0
+- The checked-in Gradle Wrapper (no system Gradle installation required)
+
+Run the verification tasks from the project root:
 
 ```shell
 ./gradlew assembleDebug
@@ -94,7 +66,7 @@ Dependency versions are centralized in `gradle/libs.versions.toml`.
 ./gradlew lintDebug
 ```
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Dependency versions are centralized in `gradle/libs.versions.toml`.
 
 ## Project structure
 
@@ -102,6 +74,7 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 app/src/main/java/com/december172/daytiles/
 ├── data/              # Room persistence and repositories
 ├── domain/model/      # Independent journal, task, and sticker models
+├── widget/            # Android home-screen widgets
 └── ui/
     ├── calendar/      # Month state, date algorithms, and calendar UI
     ├── day/           # Daily journal and task editor
@@ -110,7 +83,7 @@ app/src/main/java/com/december172/daytiles/
 
 ## Privacy and connectivity
 
-Core functionality is fully offline. Optional user-requested sticker downloads require internet access, then remain available from private local storage. DayTiles contains no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
+DayTiles works offline. Internet access is used only when the user explicitly downloads a sticker from a URL; downloaded stickers are kept in private local storage. There are no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
 
 ## Credits
 
