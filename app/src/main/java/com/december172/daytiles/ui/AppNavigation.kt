@@ -45,7 +45,8 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
             route = TASK_EDITOR_ROUTE,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType },
-                navArgument("taskId") { type = NavType.LongType; nullable = true; defaultValue = null },
+                // Navigation's LongType cannot represent null; use a sentinel for task creation.
+                navArgument("taskId") { type = NavType.LongType; defaultValue = -1L },
             ),
         ) { entry ->
             val date = LocalDate.parse(requireNotNull(entry.arguments?.getString("date")))
