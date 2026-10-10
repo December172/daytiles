@@ -23,20 +23,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -46,16 +44,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.december172.daytiles.R
 import com.december172.daytiles.domain.model.DayContent
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import kotlinx.coroutines.launch
 
 @Composable
-fun CalendarRoute(viewModel: CalendarViewModel = viewModel()) {
+fun CalendarRoute(
+    onOpenDay: (LocalDate) -> Unit,
+    viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     CalendarScreen(
         uiState = uiState,
@@ -63,6 +65,7 @@ fun CalendarRoute(viewModel: CalendarViewModel = viewModel()) {
         onNextMonth = viewModel::showNextMonth,
         onToday = viewModel::showToday,
         onDateSelected = viewModel::selectDate,
+        onOpenDay = onOpenDay,
     )
 }
 
@@ -74,13 +77,11 @@ fun CalendarScreen(
     onNextMonth: () -> Unit,
     onToday: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { contentPadding ->
         Column(
@@ -96,11 +97,7 @@ fun CalendarScreen(
                 onPreviousMonth = onPreviousMonth,
                 onNextMonth = onNextMonth,
                 onToday = onToday,
-                onAddContent = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("内容编辑将在里程碑 2 接入")
-                    }
-                },
+                onAddContent = { onOpenDay(uiState.selectedDate) },
             )
             WeekdayHeader()
             MonthGrid(
@@ -122,11 +119,12 @@ private fun MonthHeader(
     onAddContent: () -> Unit,
 ) {
     val locale = LocalConfiguration.current.locales[0]
-    val monthTitle = remember(month, locale) {
-        month.format(DateTimeFormatter.ofPattern("yyyy MMMM", locale))
+    val monthName = remember(month, locale) {
+        month.month.getDisplayName(TextStyle.FULL, locale)
     }
+    val monthTitle = stringResource(R.string.month_title, monthName, month.year)
     val selectedLabel = remember(selectedDate, locale) {
-        selectedDate.format(DateTimeFormatter.ofPattern("M月d日 EEEE", locale))
+        selectedDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
     }
     Row(
         modifier = Modifier
@@ -141,16 +139,24 @@ private fun MonthHeader(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "已选 · $selectedLabel",
+                text = stringResource(R.string.selected_date, selectedLabel),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         TextButton(onClick = onToday) {
-            Text("今天")
+            Text(stringResource(R.string.today))
         }
-        HeaderIconButton(label = "上个月", symbol = "‹", onClick = onPreviousMonth)
-        HeaderIconButton(label = "下个月", symbol = "›", onClick = onNextMonth)
+        HeaderIconButton(
+            label = stringResource(R.string.previous_month),
+            symbol = "‹",
+            onClick = onPreviousMonth,
+        )
+        HeaderIconButton(
+            label = stringResource(R.string.next_month),
+            symbol = "›",
+            onClick = onNextMonth,
+        )
         Button(
             onClick = onAddContent,
             modifier = Modifier.size(40.dp),
@@ -254,6 +260,10 @@ private fun DayCell(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
+    val dateDescription = remember(date, locale) {
+        date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
+    }
     val border = when {
         isSelected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         isToday -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary)
@@ -268,7 +278,7 @@ private fun DayCell(
         onClick = onClick,
         modifier = modifier
             .fillMaxHeight()
-            .semantics { contentDescription = "${date.monthValue}月${date.dayOfMonth}日" },
+            .semantics { contentDescription = dateDescription },
         shape = RoundedCornerShape(10.dp),
         color = containerColor,
         border = border,
@@ -288,10 +298,14 @@ private fun DayCell(
                     DateNumber(date.dayOfMonth, isToday)
                     Spacer(modifier = Modifier.weight(1f))
                     content?.stickers?.take(if (compact) 1 else 2)?.forEach { sticker ->
+                        val stickerDescription = stringResource(
+                            R.string.sticker_accessibility,
+                            sticker.symbol,
+                        )
                         Text(
                             text = sticker.symbol,
                             modifier = Modifier.semantics {
-                                contentDescription = sticker.description
+                                contentDescription = stickerDescription
                             },
                             fontSize = if (compact) 12.sp else 15.sp,
                         )
