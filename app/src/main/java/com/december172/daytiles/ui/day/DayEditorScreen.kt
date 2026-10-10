@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -56,7 +57,10 @@ import java.time.format.FormatStyle
 
 @Composable
 fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
-    val viewModel: DayEditorViewModel = viewModel(factory = DayEditorViewModel.factory(date))
+    val viewModel: DayEditorViewModel = viewModel(
+        key = "day-editor-$date",
+        factory = DayEditorViewModel.factory(date),
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -73,8 +77,23 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onAddSticker = viewModel::addSticker,
         onAddStickerAsset = viewModel::addStickerAsset,
         onImportImage = { imagePicker.launch(arrayOf("image/png", "image/webp")) },
+        onImportRemoteImage = { viewModel.importRemoteImageSticker(context, it) },
+        onClearRemoteImageError = viewModel::clearRemoteStickerError,
         onDeleteSticker = viewModel::deleteSticker,
     )
+}
+
+@Composable
+fun DayEditorPopup(date: LocalDate, onDismiss: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 40.dp),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 8.dp,
+    ) {
+        DayEditorRoute(date = date, onBack = onDismiss)
+    }
 }
 
 @Composable
@@ -89,6 +108,8 @@ fun DayEditorScreen(
     onAddSticker: (String) -> Unit,
     onAddStickerAsset: (StickerAssetEntity) -> Unit,
     onImportImage: () -> Unit,
+    onImportRemoteImage: (String) -> Unit,
+    onClearRemoteImageError: () -> Unit,
     onDeleteSticker: (StickerPlacementWithAsset) -> Unit,
 ) {
     var newTaskTitle by remember { mutableStateOf("") }
@@ -111,7 +132,7 @@ fun DayEditorScreen(
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                TextButton(onClick = onBack) { Text(stringResource(R.string.close)) }
                 Text(
                     text = dateTitle,
                     modifier = Modifier.weight(1f),
@@ -270,6 +291,9 @@ fun DayEditorScreen(
                 showStickerPicker = false
                 onImportImage()
             },
+            onImportRemoteImage = onImportRemoteImage,
+            onClearRemoteImageError = onClearRemoteImageError,
+            remoteStickerState = uiState.remoteStickerState,
         )
     }
 }
@@ -338,8 +362,12 @@ private fun StickerPickerDialog(
     onStickerSelected: (String) -> Unit,
     onAssetSelected: (StickerAssetEntity) -> Unit,
     onImportImage: () -> Unit,
+    onImportRemoteImage: (String) -> Unit,
+    onClearRemoteImageError: () -> Unit,
+    remoteStickerState: RemoteStickerState,
 ) {
     var customEmoji by remember { mutableStateOf("") }
+    var remoteUrl by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.choose_sticker)) },
@@ -381,6 +409,35 @@ private fun StickerPickerDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.import_sticker_image))
+                }
+                OutlinedTextField(
+                    value = remoteUrl,
+                    onValueChange = {
+                        remoteUrl = it
+                        onClearRemoteImageError()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.remote_sticker_url)) },
+                    placeholder = { Text(stringResource(R.string.remote_sticker_url_placeholder)) },
+                    singleLine = true,
+                    isError = remoteStickerState == RemoteStickerState.ERROR,
+                    supportingText = if (remoteStickerState == RemoteStickerState.ERROR) {
+                        { Text(stringResource(R.string.remote_sticker_error)) }
+                    } else {
+                        null
+                    },
+                )
+                TextButton(
+                    onClick = { onImportRemoteImage(remoteUrl.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = remoteUrl.isNotBlank() &&
+                        remoteStickerState != RemoteStickerState.DOWNLOADING,
+                ) {
+                    if (remoteStickerState == RemoteStickerState.DOWNLOADING) {
+                        CircularProgressIndicator(modifier = Modifier.height(24.dp))
+                    } else {
+                        Text(stringResource(R.string.download_remote_sticker))
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(

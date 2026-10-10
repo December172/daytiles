@@ -1,17 +1,19 @@
 package com.december172.daytiles.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.december172.daytiles.ui.calendar.CalendarRoute
-import com.december172.daytiles.ui.day.DayEditorRoute
+import com.december172.daytiles.ui.day.DayEditorPopup
 import java.time.LocalDate
 
 private const val CALENDAR_ROUTE = "calendar"
-private const val DAY_ROUTE = "day/{date}"
+private const val DAY_POPUP_ROUTE = "day/{date}"
 
 @Composable
 fun AppNavigation() {
@@ -20,12 +22,13 @@ fun AppNavigation() {
         composable(CALENDAR_ROUTE) {
             CalendarRoute(onOpenDay = { date -> navController.navigate("day/$date") })
         }
-        composable(
-            route = DAY_ROUTE,
+        dialog(
+            route = DAY_POPUP_ROUTE,
             arguments = listOf(navArgument("date") { type = NavType.StringType }),
+            dialogProperties = DialogProperties(usePlatformDefaultWidth = false),
         ) { entry ->
             val date = LocalDate.parse(requireNotNull(entry.arguments?.getString("date")))
-            DayEditorRoute(date = date, onBack = navController::navigateUp)
+            DayEditorPopup(date = date, onDismiss = navController::navigateUp)
         }
     }
 }
