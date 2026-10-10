@@ -16,39 +16,47 @@ The calendar provides a full-height month grid, date selection, and quick access
 - Daily journal entries stored separately from tasks and stickers, with automatic saving
 - Dated tasks with a dedicated full-screen create/edit form for title, details, tags, and optional reminder alarms
 - Ordered, checkable subtasks on tasks, with completion progress and data-preserving Room migration
+- Daily and weekly completed-task targets with progress bars and goal punch-card counts
+- Optional importance/urgency classification with a separate four-quadrant priority matrix
 - Task completion, deletion, due-date grouping, tag filtering, and overdue indicators in the task overview
 - Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
 - Calendar and Tasks bottom navigation, including a date-grouped task list
-- Three Android home-screen widgets:
+- Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course planner, focus clock, settings, and help
+- Week-at-a-glance screen showing tasks and journal snippets
+- Recurring weekly course planner with weekday, time, location, and optional local reminders
+- Configurable focus clock with pause/resume, automatic break phase, optional task association, persistent notification, and widget start
+- Five resizable Android home-screen widgets with compact and expanded layouts:
   - Todo list with open tasks, due dates, reminder times, and completion actions
   - Daily journal preview with a one-tap editor for today's entry
   - Compact localized month calendar with today's date highlighted
+  - Week overview with dated tasks and journal previews
+  - Focus clock for starting/checking a focus session
 - English as the default language and Simplified Chinese (`zh-CN`) localization
 - Offline-first storage, with no account, ads, analytics, tracking, cloud sync, or backend
 
-## Planned features (TODO)
+## Feature completion checklist
 
 The following work is intentionally split into small steps. Implement and verify one item at a time; do not bundle the whole list into one release.
 
 ### Task organization
 
 - [x] **Subtasks** — support a parent task with an ordered checklist of child tasks, including completion state and a clear parent progress summary. Preserve existing tasks during the Room schema migration.
-- [ ] **Task targets and aims** — define daily and weekly goals (for example, a target number of completed tasks), show progress toward each goal, and provide a compact goal/punch-card view. Keep goal records distinct from journal entries and tasks.
-- [ ] **Four-quadrant prioritization** — optionally classify tasks by importance and urgency, then provide a separate Eisenhower-style view. Avoid forcing this model on ordinary task entry.
+- [x] **Task targets and aims** — define daily and weekly goals, show completion progress, and provide a compact punch-card count. Goal records are distinct from journal entries and tasks.
+- [x] **Four-quadrant prioritization** — optionally classify tasks by importance and urgency, then view them in a separate four-quadrant matrix. Ordinary task entry remains unclassified by default.
 
 ### Navigation and calendar views
 
-- [ ] **Side menu** — add a navigation drawer for secondary areas such as settings, tags, goals, and help. Keep the calendar and task list directly accessible and retain a simple small-screen experience.
-- [ ] **Week view** — add a week-at-a-glance screen with dated tasks and journal snippets, then expose a compact week-view home-screen widget.
-- [ ] **Schedule and recurring items** — add an optional schedule view for recurring commitments, starting with a course planner for class names, weekdays, start/end times, locations, and local reminders. Keep course sessions distinct from journal entries and tasks.
+- [x] **Side menu** — provide a navigation drawer for settings, tags, goals, help, and planner views, with calendar and tasks directly accessible.
+- [x] **Week view** — provide a week-at-a-glance screen with dated tasks and journal snippets, plus a compact week-view widget.
+- [x] **Schedule and recurring items** — provide a weekly course planner for class names, weekdays, start/end times, locations, and local reminders. Course sessions are distinct from journal entries and tasks.
 
 ### Focus and home-screen widgets
 
-- [ ] **Focus clock** — add an offline focus timer with configurable work/break durations, pause/resume, and a persistent notification; allow an optional link to a task.
-- [ ] **Focus clock widget** — add a compact widget for starting or checking the active focus session.
-- [ ] **Widget layout options** — offer useful compact and expanded variants for the existing todo, journal, and month widgets, then add the week widget when week view is available.
+- [x] **Focus clock** — provide an offline timer with configurable work/break durations, pause/resume, persistent notification, and optional task association.
+- [x] **Focus clock widget** — provide a compact widget for starting or checking a focus session.
+- [x] **Widget layout options** — make todo, journal, month, week, and focus widgets resizable, with content adapted for compact and expanded sizes.
 
 ## Build and test
 

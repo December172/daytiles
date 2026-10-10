@@ -14,6 +14,10 @@ class MonthWidgetProvider : AppWidgetProvider() {
         ids.forEach { updateWidget(context, manager, it) }
     }
 
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+        updateWidget(context, manager, appWidgetId)
+    }
+
     companion object {
         internal fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
             val now = LocalDate.now()
@@ -29,6 +33,9 @@ class MonthWidgetProvider : AppWidgetProvider() {
                 }.joinToString(" ")
             }.joinToString("\n")
             val views = RemoteViews(context.packageName, R.layout.widget_month)
+            val width = manager.getAppWidgetOptions(widgetId)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
+            views.setTextViewTextSize(R.id.month_widget_grid, android.util.TypedValue.COMPLEX_UNIT_SP, if (width < 150) 8f else 10f)
             val locale = DayTilesWidgetProvider.locale(context)
             views.setTextViewText(R.id.month_widget_title, month.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale)))
             val weekdays = context.resources.getStringArray(R.array.widget_weekdays).joinToString("  ")

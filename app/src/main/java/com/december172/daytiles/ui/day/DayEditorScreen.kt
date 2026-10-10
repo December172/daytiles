@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -96,6 +97,9 @@ private data class TaskDraft(
     val tags: String,
     val reminderAt: Long?,
     val subtasks: List<String>,
+    val importance: Int,
+    val urgency: Int,
+    val prioritySet: Boolean,
 )
 
 @Composable
@@ -114,11 +118,17 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
     val initialSubtasks by androidx.compose.runtime.produceState<List<SubtaskEntity>?>(null, task?.id) {
         value = task?.let { viewModel.loadSubtasks(it.id) }
     }
+    var importance by remember(task?.id) { mutableStateOf(task?.importance ?: 0) }
+    var urgency by remember(task?.id) { mutableStateOf(task?.urgency ?: 0) }
+    var prioritySet by remember(task?.id) { mutableStateOf(task?.prioritySet ?: false) }
     val context = LocalContext.current
     var pendingSave by remember { mutableStateOf<TaskDraft?>(null) }
 
     fun save(draft: TaskDraft, reminderAt: Long? = draft.reminderAt) {
-        viewModel.saveTask(task, draft.title, draft.details, draft.tags, reminderAt, draft.subtasks) { savedId ->
+        viewModel.saveTask(
+            task, draft.title, draft.details, draft.tags, reminderAt, draft.subtasks,
+            draft.importance, draft.urgency, draft.prioritySet,
+        ) { savedId ->
             val parentId = task?.id ?: savedId
             if (parentId != null) {
                 if (task == null) createdTaskId = parentId else onBack()
@@ -139,6 +149,10 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
             task = task,
             subtasks = subtasks,
             initialSubtasks = initialSubtasks,
+            prioritySet = prioritySet,
+            importance = importance,
+            urgency = urgency,
+            onPriorityChanged = { imp, urg, enabled -> importance = imp; urgency = urg; prioritySet = enabled },
             onToggleSubtask = { viewModel.setSubtaskCompleted(it, !it.isCompleted) },
             onBack = onBack,
             onDelete = task?.let { existingTask ->
@@ -168,6 +182,10 @@ private fun TaskEditorScreen(
     task: TaskEntity?,
     subtasks: List<SubtaskEntity>,
     initialSubtasks: List<SubtaskEntity>?,
+    prioritySet: Boolean,
+    importance: Int,
+    urgency: Int,
+    onPriorityChanged: (Int, Int, Boolean) -> Unit,
     onToggleSubtask: (SubtaskEntity) -> Unit,
     onBack: () -> Unit,
     onDelete: (() -> Unit)?,
@@ -209,7 +227,9 @@ private fun TaskEditorScreen(
                     fontWeight = FontWeight.SemiBold,
                 )
                 TextButton(
-                    onClick = { onSave(TaskDraft(title, details, tags, reminderAt, subtaskTitles.orEmpty())) },
+                    onClick = {
+                        onSave(TaskDraft(title, details, tags, reminderAt, subtaskTitles.orEmpty(), importance, urgency, prioritySet))
+                    },
                     enabled = title.isNotBlank(),
                 ) { Text(stringResource(R.string.save)) }
             }
@@ -243,6 +263,25 @@ private fun TaskEditorScreen(
                 placeholder = { Text(stringResource(R.string.task_details_hint)) },
                 minLines = 4,
             )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.task_priority), style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Checkbox(prioritySet, {
+                        onPriorityChanged(importance, urgency, it)
+                    })
+                    Text(stringResource(R.string.enable_priority))
+                }
+                if (prioritySet) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(importance == 1, { onPriorityChanged(1, urgency, true) }, label = { Text(stringResource(R.string.important)) })
+                        FilterChip(importance == 0, { onPriorityChanged(0, urgency, true) }, label = { Text(stringResource(R.string.not_important)) })
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(urgency == 1, { onPriorityChanged(importance, 1, true) }, label = { Text(stringResource(R.string.urgent)) })
+                        FilterChip(urgency == 0, { onPriorityChanged(importance, 0, true) }, label = { Text(stringResource(R.string.not_urgent)) })
+                    }
+                }
+            }
             if (task != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(

@@ -11,6 +11,7 @@ class DayTilesApplication : Application() {
             database.journalDao(),
             database.taskDao(),
             database.subtaskDao(),
+            database.planningDao(),
             database.stickerPlacementDao(),
             applicationContext,
         )

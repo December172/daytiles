@@ -12,6 +12,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE date BETWEEN :start AND :end ORDER BY date, sortOrder, id")
     fun observeBetween(start: LocalDate, end: LocalDate): Flow<List<TaskEntity>>
 
+    @Query("SELECT * FROM tasks WHERE date BETWEEN :start AND :end ORDER BY date, sortOrder, id")
+    suspend fun tasksBetween(start: LocalDate, end: LocalDate): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE date = :date ORDER BY sortOrder, id")
     fun observeForDate(date: LocalDate): Flow<List<TaskEntity>>
 
@@ -32,6 +35,9 @@ interface TaskDao {
 
     @Update
     suspend fun update(task: TaskEntity)
+
+    @Query("UPDATE tasks SET importance = :importance, urgency = :urgency, prioritySet = 1, updatedAt = :updatedAt WHERE id = :taskId")
+    suspend fun updatePriority(taskId: Long, importance: Int, urgency: Int, updatedAt: Long)
 
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: Long)

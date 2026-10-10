@@ -121,13 +121,16 @@ class DayEditorViewModel(
         tags: String,
         reminderAt: Long?,
         subtasks: List<String>,
+        importance: Int,
+        urgency: Int,
+        prioritySet: Boolean,
         onSaved: (Long?) -> Unit,
     ) {
         viewModelScope.launch {
             val savedId = if (task == null) {
-                repository.addTask(date, title, details, tags, reminderAt)
+                repository.addTask(date, title, details, tags, reminderAt, importance, urgency, prioritySet)
             } else {
-                repository.updateTask(task, title, details, tags, reminderAt)
+                repository.updateTask(task, title, details, tags, reminderAt, importance, urgency, prioritySet)
                 task.id
             }
             if (savedId > 0) repository.saveSubtasks(savedId, subtasks)

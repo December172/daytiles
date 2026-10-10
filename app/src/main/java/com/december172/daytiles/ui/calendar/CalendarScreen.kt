@@ -75,6 +75,8 @@ fun CalendarRoute(
     onOpenJournal: (LocalDate) -> Unit = onOpenDay,
     initialDate: LocalDate? = null,
     openJournalInitially: Boolean = false,
+    openTasksInitially: Boolean = false,
+    onOpenMenu: () -> Unit = {},
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -84,7 +86,7 @@ fun CalendarRoute(
             if (openJournalInitially) onOpenJournal(it) else onOpenDay(it)
         }
     }
-    var selectedTab by remember { mutableStateOf(CalendarTab.CALENDAR) }
+    var selectedTab by remember { mutableStateOf(if (openTasksInitially) CalendarTab.TASKS else CalendarTab.CALENDAR) }
     var selectedTaskTag by remember { mutableStateOf<String?>(null) }
     CalendarScreen(
         uiState = uiState,
@@ -101,6 +103,7 @@ fun CalendarRoute(
         onTaskCompletedChanged = viewModel::setTaskCompleted,
         selectedTaskTag = selectedTaskTag,
         onTaskTagSelected = { selectedTaskTag = it },
+        onOpenMenu = onOpenMenu,
     )
 }
 
@@ -123,8 +126,10 @@ fun CalendarScreen(
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit = { _, _ -> },
     selectedTaskTag: String? = null,
     onTaskTagSelected: (String?) -> Unit = {},
+    onOpenMenu: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val navigationMenuDescription = stringResource(R.string.open_navigation_menu)
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -161,6 +166,13 @@ fun CalendarScreen(
                 .padding(contentPadding)
                 .padding(bottom = 4.dp),
         ) {
+            Row(Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onOpenMenu, modifier = Modifier.size(40.dp)) {
+                    Text("☰", modifier = Modifier.semantics {
+                        contentDescription = navigationMenuDescription
+                    })
+                }
+            }
             if (selectedTab == CalendarTab.CALENDAR) {
                 MonthHeader(
                     month = uiState.visibleMonth,
