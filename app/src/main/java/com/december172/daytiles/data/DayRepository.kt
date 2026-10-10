@@ -8,6 +8,9 @@ import com.december172.daytiles.data.local.TaskDao
 import com.december172.daytiles.data.local.TaskEntity
 import com.december172.daytiles.data.local.SubtaskDao
 import com.december172.daytiles.data.local.SubtaskEntity
+import com.december172.daytiles.data.local.PlanningDao
+import com.december172.daytiles.data.local.TaskGoalEntity
+import com.december172.daytiles.data.local.CourseEntity
 import com.december172.daytiles.data.local.StickerPlacementDao
 import com.december172.daytiles.data.local.StickerPlacementEntity
 import com.december172.daytiles.data.local.StickerAssetEntity
@@ -26,11 +29,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import com.december172.daytiles.widget.DayTilesWidgetProvider
+import com.december172.daytiles.data.CourseReminderScheduler
+import com.december172.daytiles.widget.WeekWidgetProvider
 
 class DayRepository(
     private val journalDao: JournalDao,
     private val taskDao: TaskDao,
     private val subtaskDao: SubtaskDao,
+    private val planningDao: PlanningDao,
     private val stickerPlacementDao: StickerPlacementDao,
     private val appContext: Context? = null,
 ) {
@@ -40,6 +46,12 @@ class DayRepository(
     fun observeTasks(month: YearMonth): Flow<List<TaskEntity>> =
         taskDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
+    suspend fun tasksBetween(start: LocalDate, end: LocalDate) = taskDao.tasksBetween(start, end)
+
+    suspend fun journalsBetween(start: LocalDate, end: LocalDate) = journalDao.journalsBetween(start, end)
+
+    fun observeTasksBetween(start: LocalDate, end: LocalDate): Flow<List<TaskEntity>> = taskDao.observeBetween(start, end)
+
     suspend fun recentOpenTasks(limit: Int = 3): List<TaskEntity> = taskDao.recentOpen(limit)
 
     suspend fun allOpenTasks(): List<TaskEntity> = taskDao.allOpen()
@@ -47,6 +59,11 @@ class DayRepository(
     suspend fun setTaskCompletedById(id: Long, completed: Boolean) {
         val task = taskDao.findById(id) ?: return
         setTaskCompleted(task, completed)
+    }
+
+    suspend fun setTaskPriority(task: TaskEntity, importance: Int, urgency: Int) {
+        taskDao.updatePriority(task.id, importance.coerceIn(0, 1), urgency.coerceIn(0, 1), System.currentTimeMillis())
+        refreshWidgets()
     }
 
     suspend fun setTaskReminder(task: TaskEntity, reminderAt: Long?) {
@@ -94,6 +111,37 @@ class DayRepository(
         subtaskDao.update(subtask.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
     }
 
+    suspend fun goal(periodType: String, periodStart: LocalDate): TaskGoalEntity? =
+        planningDao.findGoal(periodType, periodStart.toString())
+
+    suspend fun saveGoal(periodType: String, periodStart: LocalDate, targetCount: Int) {
+        val old = goal(periodType, periodStart)
+        val now = System.currentTimeMillis()
+        planningDao.saveGoal(
+            TaskGoalEntity(
+                id = old?.id ?: 0,
+                periodStart = periodStart.toString(),
+                periodType = periodType,
+                targetCount = targetCount.coerceAtLeast(1),
+                createdAt = old?.createdAt ?: now,
+                updatedAt = now,
+            ),
+        )
+    }
+
+    fun observeCourses() = planningDao.observeCourses()
+
+    suspend fun addCourse(course: CourseEntity): Long {
+        val id = planningDao.addCourse(course)
+        appContext?.let { CourseReminderScheduler.schedule(it, course.copy(id = id)) }
+        return id
+    }
+
+    suspend fun deleteCourse(id: Long) {
+        planningDao.deleteCourse(id)
+        appContext?.let { CourseReminderScheduler.cancel(it, id) }
+    }
+
     fun observeStickers(month: YearMonth): Flow<List<StickerPlacementWithAsset>> =
         stickerPlacementDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
@@ -106,6 +154,7 @@ class DayRepository(
         if (entry.content.isBlank()) {
             if (entry.id != 0L) journalDao.deleteById(entry.id)
             appContext?.let(DayTilesWidgetProvider::refreshJournal)
+            appContext?.let(WeekWidgetProvider::refresh)
             return 0
         }
         val savedId = if (entry.id == 0L) journalDao.insert(entry) else {
@@ -113,6 +162,7 @@ class DayRepository(
             entry.id
         }
         appContext?.let(DayTilesWidgetProvider::refreshJournal)
+        appContext?.let(WeekWidgetProvider::refresh)
         return savedId
     }
 
@@ -122,6 +172,9 @@ class DayRepository(
         details: String,
         tags: String,
         reminderAt: Long?,
+        importance: Int = 0,
+        urgency: Int = 0,
+        prioritySet: Boolean = false,
     ): Long {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return 0L
@@ -132,6 +185,9 @@ class DayRepository(
             details = details.trim(),
             tags = normalizeTaskTags(tags),
             reminderAt = reminderAt,
+            importance = importance,
+            urgency = urgency,
+            prioritySet = prioritySet,
             sortOrder = taskDao.nextSortOrder(date),
             createdAt = now,
             updatedAt = now,
@@ -155,7 +211,16 @@ class DayRepository(
         refreshWidgets()
     }
 
-    suspend fun updateTask(task: TaskEntity, title: String, details: String, tags: String, reminderAt: Long?) {
+    suspend fun updateTask(
+        task: TaskEntity,
+        title: String,
+        details: String,
+        tags: String,
+        reminderAt: Long?,
+        importance: Int = task.importance,
+        urgency: Int = task.urgency,
+        prioritySet: Boolean = task.prioritySet,
+    ) {
         val cleanTitle = title.trim()
         if (cleanTitle.isEmpty()) return
         val cleanTags = normalizeTaskTags(tags)
@@ -164,6 +229,9 @@ class DayRepository(
             details = details.trim(),
             tags = cleanTags,
             reminderAt = reminderAt,
+            importance = importance,
+            urgency = urgency,
+            prioritySet = prioritySet,
             updatedAt = System.currentTimeMillis(),
         )
         taskDao.update(updated)
@@ -182,7 +250,10 @@ class DayRepository(
     }
 
     private fun refreshWidgets() {
-        appContext?.let(DayTilesWidgetProvider::refresh)
+        appContext?.let {
+            DayTilesWidgetProvider.refresh(it)
+            WeekWidgetProvider.refresh(it)
+        }
     }
 
     suspend fun addSticker(date: LocalDate, symbol: String) {

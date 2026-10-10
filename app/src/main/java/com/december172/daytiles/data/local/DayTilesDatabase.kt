@@ -15,8 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         StickerAssetEntity::class,
         StickerPlacementEntity::class,
         SubtaskEntity::class,
+        TaskGoalEntity::class,
+        CourseEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(DateConverters::class)
@@ -24,6 +26,7 @@ abstract class DayTilesDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
     abstract fun taskDao(): TaskDao
     abstract fun subtaskDao(): SubtaskDao
+    abstract fun planningDao(): PlanningDao
     abstract fun stickerPlacementDao(): StickerPlacementDao
 
     companion object {
@@ -43,6 +46,7 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     MIGRATION_4_5,
                     MIGRATION_5_6,
                     MIGRATION_6_7,
+                    MIGRATION_7_8,
                 ).build().also { instance = it }
             }
 
@@ -172,6 +176,18 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_subtasks_parentTaskId_sortOrder` " +
                         "ON `subtasks` (`parentTaskId`, `sortOrder`)",
                 )
+            }
+        }
+
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `importance` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `urgency` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `prioritySet` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `task_goals` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `periodStart` TEXT NOT NULL, `periodType` TEXT NOT NULL, `targetCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_task_goals_periodStart_periodType` ON `task_goals` (`periodStart`, `periodType`)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `courses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `weekday` INTEGER NOT NULL, `startMinute` INTEGER NOT NULL, `endMinute` INTEGER NOT NULL, `location` TEXT NOT NULL, `reminderMinutes` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_courses_weekday_startMinute` ON `courses` (`weekday`, `startMinute`)")
             }
         }
     }

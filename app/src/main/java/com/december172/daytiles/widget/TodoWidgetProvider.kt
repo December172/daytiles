@@ -19,6 +19,10 @@ class TodoWidgetProvider : AppWidgetProvider() {
         ids.forEach { updateWidget(context, manager, it) }
     }
 
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+        updateWidget(context, manager, appWidgetId)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action != ACTION_TOGGLE) return
@@ -47,8 +51,11 @@ class TodoWidgetProvider : AppWidgetProvider() {
 
         internal fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_todo)
+            val height = manager.getAppWidgetOptions(widgetId)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
+            views.setTextViewTextSize(R.id.todo_widget_title, android.util.TypedValue.COMPLEX_UNIT_SP, if (height < 130) 12f else 15f)
             views.setTextViewText(R.id.todo_widget_title, context.getString(R.string.tasks_heading))
-            views.setRemoteAdapter(R.id.todo_widget_list, Intent(context, TodoWidgetService::class.java))
+            views.setRemoteAdapter(R.id.todo_widget_list, Intent(context, TodoWidgetService::class.java).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
             views.setPendingIntentTemplate(
                 R.id.todo_widget_list,
                 PendingIntent.getBroadcast(

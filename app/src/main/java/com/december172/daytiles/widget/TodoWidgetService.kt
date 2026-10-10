@@ -1,6 +1,7 @@
 package com.december172.daytiles.widget
 
 import android.content.Intent
+import android.appwidget.AppWidgetManager
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import com.december172.daytiles.DayTilesApplication
@@ -8,11 +9,13 @@ import com.december172.daytiles.R
 import kotlinx.coroutines.runBlocking
 
 class TodoWidgetService : RemoteViewsService() {
-    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory = TodoViewsFactory(this)
+    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory =
+        TodoViewsFactory(this, intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID))
 }
 
 private class TodoViewsFactory(
     private val service: TodoWidgetService,
+    private val widgetId: Int,
 ) : RemoteViewsService.RemoteViewsFactory {
     private var rows = emptyList<com.december172.daytiles.data.local.TaskEntity>()
 
@@ -20,7 +23,14 @@ private class TodoViewsFactory(
 
     override fun onDataSetChanged() {
         rows = runBlocking {
-            (service.application as DayTilesApplication).repository.allOpenTasks()
+            val height = AppWidgetManager.getInstance(service).getAppWidgetOptions(widgetId)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
+            val limit = when {
+                height < 130 -> 2
+                height < 220 -> 5
+                else -> 1000
+            }
+            (service.application as DayTilesApplication).repository.recentOpenTasks(limit)
         }
     }
 

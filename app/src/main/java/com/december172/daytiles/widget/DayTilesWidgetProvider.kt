@@ -24,6 +24,10 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
         ids.forEach { updateWidget(context, manager, it) }
     }
 
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+        updateWidget(context, manager, appWidgetId)
+    }
+
     companion object {
         fun refreshJournal(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
@@ -37,12 +41,16 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
                 DayTilesWidgetProvider::class.java,
                 TodoWidgetProvider::class.java,
                 MonthWidgetProvider::class.java,
+                WeekWidgetProvider::class.java,
+                FocusWidgetProvider::class.java,
             ).forEach { provider ->
                 manager.getAppWidgetIds(ComponentName(context, provider)).forEach { id ->
                     when (provider) {
                         DayTilesWidgetProvider::class.java -> updateWidget(context, manager, id)
                         TodoWidgetProvider::class.java -> TodoWidgetProvider.updateWidget(context, manager, id)
                         MonthWidgetProvider::class.java -> MonthWidgetProvider.updateWidget(context, manager, id)
+                        WeekWidgetProvider::class.java -> WeekWidgetProvider.updateWidget(context, manager, id)
+                        FocusWidgetProvider::class.java -> FocusWidgetProvider.updateWidget(context, manager, id)
                     }
                 }
             }
@@ -77,6 +85,10 @@ class DayTilesWidgetProvider : AppWidgetProvider() {
 
         private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_daytiles)
+            val widgetHeight = manager.getAppWidgetOptions(widgetId)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160)
+            views.setInt(R.id.journal_widget_preview, "setMaxLines", if (widgetHeight < 130) 2 else 6)
+            views.setTextViewTextSize(R.id.journal_widget_preview, android.util.TypedValue.COMPLEX_UNIT_SP, if (widgetHeight < 130) 11f else 13f)
             val today = LocalDate.now()
             val locale = locale(context)
             views.setTextViewText(R.id.journal_widget_title, context.getString(R.string.journal_heading))
