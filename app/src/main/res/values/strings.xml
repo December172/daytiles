@@ -24,4 +24,7 @@
     <string name="add_sticker">+ Add sticker</string>
     <string name="no_stickers">Add a sticker to make this day stand out.</string>
     <string name="choose_sticker">Choose a sticker</string>
+    <string name="tap_to_edit">Tap to edit</string>
+    <string name="custom_emoji">Custom emoji</string>
+    <string name="custom_emoji_placeholder">Type or paste emoji</string>
 </resources>

@@ -25,9 +25,11 @@ Milestone 2 provides:
 Milestone 3 begins with:
 
 - A built-in offline sticker palette
+- Custom emoji stickers entered or pasted by the user
 - Room-backed sticker placements attached to individual dates
 - Adding and removing stickers from the daily editor
 - Persistent sticker previews in month cells
+- A select-then-tap-again shortcut from a month cell to its daily editor
 - A non-destructive Room 1-to-2 migration that preserves existing journals and tasks
 
 ## Requirements
