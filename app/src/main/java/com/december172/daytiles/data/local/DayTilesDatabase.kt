@@ -14,14 +14,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         TaskEntity::class,
         StickerAssetEntity::class,
         StickerPlacementEntity::class,
+        SubtaskEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(DateConverters::class)
 abstract class DayTilesDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalDao
     abstract fun taskDao(): TaskDao
+    abstract fun subtaskDao(): SubtaskDao
     abstract fun stickerPlacementDao(): StickerPlacementDao
 
     companion object {
@@ -34,7 +36,14 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     context.applicationContext,
                     DayTilesDatabase::class.java,
                     "daytiles.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { instance = it }
+                ).addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7,
+                ).build().also { instance = it }
             }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -141,6 +150,28 @@ abstract class DayTilesDatabase : RoomDatabase() {
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `tasks` ADD COLUMN `details` TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `subtasks` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `parentTaskId` INTEGER NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `isCompleted` INTEGER NOT NULL,
+                        `sortOrder` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_subtasks_parentTaskId_sortOrder` " +
+                        "ON `subtasks` (`parentTaskId`, `sortOrder`)",
+                )
             }
         }
     }

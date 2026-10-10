@@ -24,6 +24,8 @@
     <string name="delete_task_confirmation">Delete this task? This cannot be undone.</string>
     <string name="task_details">Details</string>
     <string name="task_details_hint">Add context, steps, or anything you need to remember.</string>
+    <string name="subtasks_progress">Subtasks · %1$d of %2$d complete</string>
+    <string name="add_subtask">Add a subtask</string>
     <string name="task_tags">Tags</string>
     <string name="task_tags_hint">Separate tags with commas</string>
     <string name="all_tags">All tags</string>
