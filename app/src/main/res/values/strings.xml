@@ -54,6 +54,9 @@
     <string name="set_reminder">Set reminder</string>
     <string name="no_reminder">No reminder</string>
     <string name="reminder_permission_required">Allow notifications to receive task reminders.</string>
+    <string name="task_due_today">Today</string>
+    <string name="task_overdue">Overdue</string>
+    <string name="todo_checkbox_accessibility">Mark %1$s complete</string>
     <string-array name="widget_weekdays">
         <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
     </string-array>

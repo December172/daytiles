@@ -41,6 +41,10 @@ private class TodoViewsFactory(
         val task = rows[position]
         return RemoteViews(service.packageName, R.layout.widget_todo_row).apply {
             setTextViewText(R.id.todo_row_checkbox, "○")
+            setContentDescription(
+                R.id.todo_row_checkbox,
+                service.getString(R.string.todo_checkbox_accessibility, task.title),
+            )
             setTextViewText(R.id.todo_row_title, task.title)
             setTextViewText(R.id.todo_row_meta, DayTilesWidgetProvider.taskSummary(service, task))
             setOnClickFillInIntent(

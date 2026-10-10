@@ -237,11 +237,25 @@ private fun TaskOverview(
                                 checked = task.isCompleted,
                                 onCheckedChange = { onTaskCompletedChanged(task, it) },
                             )
-                            Text(
-                                task.title,
-                                modifier = Modifier.weight(1f),
-                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-                            )
+                            Column(modifier = Modifier.weight(1f).padding(vertical = 4.dp)) {
+                                Text(
+                                    task.title,
+                                    textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                                )
+                                if (!task.isCompleted && task.date.isBefore(LocalDate.now())) {
+                                    Text(
+                                        stringResource(R.string.task_overdue),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                } else if (!task.isCompleted && task.date == LocalDate.now()) {
+                                    Text(
+                                        stringResource(R.string.task_due_today),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                    )
+                                }
+                            }
                             TextButton(onClick = { onOpenDay(date) }) {
                                 Text(stringResource(R.string.open_day))
                             }

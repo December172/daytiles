@@ -54,6 +54,9 @@
     <string name="set_reminder">设置提醒</string>
     <string name="no_reminder">不提醒</string>
     <string name="reminder_permission_required">请允许通知，以接收任务提醒。</string>
+    <string name="task_due_today">今天</string>
+    <string name="task_overdue">已逾期</string>
+    <string name="todo_checkbox_accessibility">将“%1$s”标记为已完成</string>
     <string-array name="widget_weekdays">
         <item>一</item><item>二</item><item>三</item><item>四</item><item>五</item><item>六</item><item>日</item>
     </string-array>
