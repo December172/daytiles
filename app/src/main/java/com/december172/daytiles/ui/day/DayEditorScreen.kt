@@ -2,8 +2,10 @@ package com.december172.daytiles.ui.day
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,13 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -36,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -45,16 +44,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.app.TimePickerDialog
 import android.Manifest
+import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import java.time.ZoneId
-import java.util.Calendar
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
@@ -67,6 +63,7 @@ import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Calendar
 
 @Composable
 fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
@@ -76,12 +73,6 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var pendingReminder by remember { mutableStateOf<Pair<TaskEntity, Long?>?>(null) }
-    val notificationPermission = rememberLauncherForActivityResult(RequestPermission()) { granted ->
-        val pending = pendingReminder
-        pendingReminder = null
-        if (granted && pending != null) viewModel.setTaskReminder(pending.first, pending.second)
-    }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { viewModel.importImageSticker(context, it) }
     }
@@ -89,20 +80,6 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         uiState = uiState,
         onBack = onBack,
         onJournalChanged = viewModel::updateJournal,
-        onAddTask = viewModel::addTask,
-        onUpdateTask = viewModel::updateTask,
-        onTaskCompletedChanged = viewModel::setTaskCompleted,
-        onSetTaskReminder = { task, reminderAt ->
-            if (reminderAt != null && Build.VERSION.SDK_INT >= 33 &&
-                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            ) {
-                pendingReminder = task to reminderAt
-                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                viewModel.setTaskReminder(task, reminderAt)
-            }
-        },
-        onDeleteTask = viewModel::deleteTask,
         onAddSticker = viewModel::addSticker,
         onAddStickerAsset = viewModel::addStickerAsset,
         onImportImage = { imagePicker.launch(arrayOf("image/png", "image/webp")) },
@@ -110,6 +87,208 @@ fun DayEditorRoute(date: LocalDate, onBack: () -> Unit) {
         onClearRemoteImageError = viewModel::clearRemoteStickerError,
         onDeleteSticker = viewModel::deleteSticker,
     )
+}
+
+private data class TaskDraft(
+    val title: String,
+    val details: String,
+    val tags: String,
+    val reminderAt: Long?,
+)
+
+@Composable
+fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
+    val viewModel: DayEditorViewModel = viewModel(
+        key = "task-editor-$date",
+        factory = DayEditorViewModel.factory(date),
+    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val task = taskId?.let { id -> uiState.tasks.firstOrNull { it.id == id } }
+    val context = LocalContext.current
+    var pendingSave by remember { mutableStateOf<TaskDraft?>(null) }
+
+    fun save(draft: TaskDraft, reminderAt: Long? = draft.reminderAt) {
+        viewModel.saveTask(task, draft.title, draft.details, draft.tags, reminderAt, onBack)
+    }
+
+    val notificationPermission = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        pendingSave?.let { draft -> save(draft, if (granted) draft.reminderAt else task?.reminderAt) }
+        pendingSave = null
+    }
+
+    if (taskId == null || task != null) {
+        TaskEditorScreen(
+            date = date,
+            task = task,
+            onBack = onBack,
+            onDelete = task?.let { existingTask ->
+                { viewModel.deleteTask(existingTask, onBack) }
+            },
+            onSave = { draft ->
+                if (draft.reminderAt != null && Build.VERSION.SDK_INT >= 33 &&
+                    context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    pendingSave = draft
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    save(draft)
+                }
+            },
+        )
+    } else {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+private fun TaskEditorScreen(
+    date: LocalDate,
+    task: TaskEntity?,
+    onBack: () -> Unit,
+    onDelete: (() -> Unit)?,
+    onSave: (TaskDraft) -> Unit,
+) {
+    var title by remember(task?.id) { mutableStateOf(task?.title.orEmpty()) }
+    var details by remember(task?.id) { mutableStateOf(task?.details.orEmpty()) }
+    var tags by remember(task?.id) { mutableStateOf(task?.tags.orEmpty().split(',').joinToString(", ")) }
+    var reminderAt by remember(task?.id) { mutableStateOf(task?.reminderAt) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val dateLabel = remember(date, locale) {
+        date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
+    }
+
+    Scaffold { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
+                Text(
+                    text = stringResource(if (task == null) R.string.new_task else R.string.edit_task),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                TextButton(
+                    onClick = { onSave(TaskDraft(title, details, tags, reminderAt)) },
+                    enabled = title.isNotBlank(),
+                ) { Text(stringResource(R.string.save)) }
+            }
+            if (onDelete != null) {
+                TextButton(onClick = { confirmDelete = true }) {
+                    Text(stringResource(R.string.delete_task))
+                }
+            }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            ) {
+                Text(
+                    text = dateLabel,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.task_title)) },
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = details,
+                onValueChange = { details = it },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+                label = { Text(stringResource(R.string.task_details)) },
+                placeholder = { Text(stringResource(R.string.task_details_hint)) },
+                minLines = 4,
+            )
+            OutlinedTextField(
+                value = tags,
+                onValueChange = { tags = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.task_tags)) },
+                supportingText = { Text(stringResource(R.string.task_tags_hint)) },
+                singleLine = true,
+            )
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+            ) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text(stringResource(R.string.task_reminders), style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = reminderAt?.let {
+                                stringResource(
+                                    R.string.reminder_time_value,
+                                    java.text.SimpleDateFormat("HH:mm", locale).format(java.util.Date(it)),
+                                )
+                            } ?: stringResource(R.string.no_reminder),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = {
+                            val calendar = Calendar.getInstance().apply {
+                                timeInMillis = reminderAt ?: date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                if (reminderAt == null) {
+                                    if (date == LocalDate.now()) {
+                                        timeInMillis = System.currentTimeMillis()
+                                        add(Calendar.HOUR_OF_DAY, 1)
+                                    } else {
+                                        set(Calendar.HOUR_OF_DAY, 9)
+                                        set(Calendar.MINUTE, 0)
+                                    }
+                                }
+                            }
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    calendar.set(Calendar.HOUR_OF_DAY, hour)
+                                    calendar.set(Calendar.MINUTE, minute)
+                                    reminderAt = calendar.timeInMillis
+                                },
+                                calendar.get(Calendar.HOUR_OF_DAY),
+                                calendar.get(Calendar.MINUTE),
+                                true,
+                            ).show()
+                        }) { Text(stringResource(R.string.set_reminder)) }
+                        if (reminderAt != null) {
+                            TextButton(onClick = { reminderAt = null }) {
+                                Text(stringResource(R.string.remove_reminder))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.delete_task)) },
+            text = { Text(stringResource(R.string.delete_task_confirmation)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; onDelete?.invoke() }) {
+                    Text(stringResource(R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -185,11 +364,6 @@ fun DayEditorScreen(
     uiState: DayEditorUiState,
     onBack: () -> Unit,
     onJournalChanged: (String) -> Unit,
-    onAddTask: (String) -> Unit,
-    onUpdateTask: (TaskEntity, String, String) -> Unit,
-    onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
-    onSetTaskReminder: (TaskEntity, Long?) -> Unit,
-    onDeleteTask: (TaskEntity) -> Unit,
     onAddSticker: (String) -> Unit,
     onAddStickerAsset: (StickerAssetEntity) -> Unit,
     onImportImage: () -> Unit,
@@ -197,9 +371,8 @@ fun DayEditorScreen(
     onClearRemoteImageError: () -> Unit,
     onDeleteSticker: (StickerPlacementWithAsset) -> Unit,
 ) {
-    var newTaskTitle by remember { mutableStateOf("") }
-    var taskBeingEdited by remember { mutableStateOf<TaskEntity?>(null) }
     var showStickerPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val dateTitle = remember(uiState.date, locale) {
         uiState.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
@@ -282,7 +455,16 @@ fun DayEditorScreen(
                     } else {
                         Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                             uiState.stickers.forEach { sticker ->
-                                TextButton(onClick = { onDeleteSticker(sticker) }) {
+                                val removeDescription = stringResource(
+                                    R.string.remove_sticker_accessibility,
+                                    sticker.displayName,
+                                )
+                                TextButton(
+                                    onClick = { onDeleteSticker(sticker) },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = removeDescription
+                                    },
+                                ) {
                                     if (sticker.kind == StickerAssetKind.IMAGE) {
                                         AsyncImage(
                                             model = File(sticker.source),
@@ -300,75 +482,7 @@ fun DayEditorScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                        .heightIn(max = 420.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.tasks_heading),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedTextField(
-                            value = newTaskTitle,
-                            onValueChange = { newTaskTitle = it },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            placeholder = { Text(stringResource(R.string.add_task_placeholder)) },
-                            shape = RoundedCornerShape(14.dp),
-                        )
-                        Button(
-                            onClick = {
-                                onAddTask(newTaskTitle)
-                                newTaskTitle = ""
-                            },
-                            enabled = newTaskTitle.isNotBlank(),
-                        ) { Text(stringResource(R.string.add)) }
-                    }
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 280.dp),
-                    ) {
-                        items(uiState.tasks, key = { it.id }) { task ->
-                            TaskRow(
-                                task = task,
-                                onCompletedChanged = onTaskCompletedChanged,
-                                onSetReminder = { onSetTaskReminder(task, it) },
-                                onEdit = { taskBeingEdited = task },
-                                onDelete = onDeleteTask,
-                            )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        }
-                    }
-                }
-            }
         }
-    }
-    taskBeingEdited?.let { task ->
-        EditTaskDialog(
-            task = task,
-            onDismiss = { taskBeingEdited = null },
-            onSave = { title, tags ->
-                onUpdateTask(task, title, tags)
-                taskBeingEdited = null
-            },
-        )
     }
     if (showStickerPicker) {
         StickerPickerDialog(
@@ -391,123 +505,6 @@ fun DayEditorScreen(
             remoteStickerState = uiState.remoteStickerState,
         )
     }
-}
-
-@Composable
-private fun TaskRow(
-    task: TaskEntity,
-    onCompletedChanged: (TaskEntity, Boolean) -> Unit,
-    onSetReminder: (Long?) -> Unit,
-    onEdit: () -> Unit,
-    onDelete: (TaskEntity) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = task.isCompleted,
-                onCheckedChange = { onCompletedChanged(task, it) },
-            )
-            Text(
-                text = task.title,
-                modifier = Modifier.weight(1f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-            )
-        }
-        if (task.tags.isNotBlank()) {
-            Text(
-                text = task.tags.split(',').joinToString("  ·  "),
-                modifier = Modifier.padding(start = 56.dp, bottom = 2.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.tertiary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        val context = LocalContext.current
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-        TextButton(onClick = {
-            if (task.reminderAt != null) {
-                onSetReminder(null)
-            } else {
-                val calendar = Calendar.getInstance().apply {
-                    timeInMillis = task.date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    if (task.date == LocalDate.now()) {
-                        timeInMillis = System.currentTimeMillis()
-                        add(Calendar.HOUR_OF_DAY, 1)
-                    } else {
-                        set(Calendar.HOUR_OF_DAY, 9)
-                        set(Calendar.MINUTE, 0)
-                    }
-                }
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute ->
-                        calendar.set(Calendar.HOUR_OF_DAY, hour)
-                        calendar.set(Calendar.MINUTE, minute)
-                        onSetReminder(calendar.timeInMillis)
-                    },
-                    calendar.get(Calendar.HOUR_OF_DAY),
-                    calendar.get(Calendar.MINUTE),
-                    true,
-                ).show()
-            }
-        }) {
-            Text(if (task.reminderAt == null) stringResource(R.string.set_reminder) else "⏰")
-        }
-        TextButton(onClick = onEdit) { Text(stringResource(R.string.edit)) }
-        TextButton(onClick = { onDelete(task) }) { Text(stringResource(R.string.delete)) }
-        }
-    }
-}
-
-@Composable
-private fun EditTaskDialog(
-    task: TaskEntity,
-    onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit,
-) {
-    var title by remember(task.id, task.title) { mutableStateOf(task.title) }
-    var tags by remember(task.id, task.tags) { mutableStateOf(task.tags.split(',').joinToString(", ")) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.edit_task)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.task_title)) },
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text(stringResource(R.string.task_tags)) },
-                    supportingText = { Text(stringResource(R.string.task_tags_hint)) },
-                    singleLine = true,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onSave(title, tags) },
-                enabled = title.isNotBlank(),
-            ) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
 }
 
 @Composable

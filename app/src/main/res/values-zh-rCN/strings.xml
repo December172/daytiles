@@ -19,6 +19,11 @@
     <string name="edit">编辑</string>
     <string name="edit_task">编辑任务</string>
     <string name="task_title">任务标题</string>
+    <string name="new_task">新建任务</string>
+    <string name="delete_task">删除任务</string>
+    <string name="delete_task_confirmation">确定删除此任务吗？此操作无法撤销。</string>
+    <string name="task_details">任务详情</string>
+    <string name="task_details_hint">补充背景、步骤或需要记住的信息。</string>
     <string name="task_tags">标签</string>
     <string name="task_tags_hint">多个标签请用逗号分隔</string>
     <string name="all_tags">全部标签</string>
@@ -59,6 +64,9 @@
     <string name="reminder_time">提醒时间</string>
     <string name="set_reminder">设置提醒</string>
     <string name="no_reminder">不提醒</string>
+    <string name="remove_reminder">移除</string>
+    <string name="reminder_time_value">提醒时间：%1$s</string>
+    <string name="remove_sticker_accessibility">移除贴纸 %1$s</string>
     <string name="reminder_permission_required">请允许通知，以接收任务提醒。</string>
     <string name="task_due_today">今天</string>
     <string name="task_overdue">已逾期</string>

@@ -70,6 +70,8 @@ import java.time.format.TextStyle
 @Composable
 fun CalendarRoute(
     onOpenDay: (LocalDate) -> Unit,
+    onCreateTask: (LocalDate) -> Unit,
+    onEditTask: (TaskEntity) -> Unit,
     onOpenJournal: (LocalDate) -> Unit = onOpenDay,
     initialDate: LocalDate? = null,
     openJournalInitially: Boolean = false,
@@ -91,6 +93,8 @@ fun CalendarRoute(
         onToday = viewModel::showToday,
         onDateSelected = viewModel::selectDate,
         onOpenDay = onOpenDay,
+        onCreateTask = onCreateTask,
+        onEditTask = onEditTask,
         selectedTab = selectedTab,
         tasks = uiState.tasks,
         onTabSelected = { selectedTab = it },
@@ -111,6 +115,8 @@ fun CalendarScreen(
     onToday: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
+    onCreateTask: (LocalDate) -> Unit,
+    onEditTask: (TaskEntity) -> Unit,
     selectedTab: CalendarTab = CalendarTab.CALENDAR,
     tasks: List<TaskEntity> = emptyList(),
     onTabSelected: (CalendarTab) -> Unit = {},
@@ -140,7 +146,7 @@ fun CalendarScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onOpenDay(uiState.selectedDate) },
+                onClick = { onCreateTask(uiState.selectedDate) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
@@ -177,6 +183,7 @@ fun CalendarScreen(
                     onPreviousMonth = onPreviousMonth,
                     onNextMonth = onNextMonth,
                     onTaskCompletedChanged = onTaskCompletedChanged,
+                    onEditTask = onEditTask,
                     selectedTag = selectedTaskTag,
                     onTagSelected = onTaskTagSelected,
                     onOpenDay = { date ->
@@ -197,6 +204,7 @@ private fun TaskOverview(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit,
+    onEditTask: (TaskEntity) -> Unit,
     onOpenDay: (LocalDate) -> Unit,
     selectedTag: String?,
     onTagSelected: (String?) -> Unit,
@@ -287,6 +295,15 @@ private fun TaskOverview(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                 }
+                                if (task.details.isNotBlank()) {
+                                    Text(
+                                        task.details,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
                                 if (!task.isCompleted && task.date.isBefore(LocalDate.now())) {
                                     Text(
                                         stringResource(R.string.task_overdue),
@@ -303,6 +320,9 @@ private fun TaskOverview(
                             }
                             TextButton(onClick = { onOpenDay(date) }) {
                                 Text(stringResource(R.string.open_day))
+                            }
+                            TextButton(onClick = { onEditTask(task) }) {
+                                Text(stringResource(R.string.edit))
                             }
                         }
                     }
