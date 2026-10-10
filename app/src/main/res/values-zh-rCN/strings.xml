@@ -38,4 +38,23 @@
     <string name="tasks_tab">待办</string>
     <string name="no_tasks_this_month">本月还没有待办事项。</string>
     <string name="open_day">打开日期</string>
+    <string name="widget_name">DayTiles 待办</string>
+    <string name="widget_description">紧凑显示接下来的待办事项</string>
+    <string name="widget_loading">正在加载待办……</string>
+    <string name="widget_no_tasks">暂无待办事项。</string>
+    <string name="widget_add_task">+ 添加</string>
+    <string name="widget_refresh">刷新</string>
+    <string name="todo_widget_name">DayTiles 待办清单</string>
+    <string name="todo_widget_description">显示全部未完成事项、勾选框和提醒</string>
+    <string name="month_widget_name">DayTiles 月历</string>
+    <string name="month_widget_description">紧凑月历视图</string>
+    <string name="task_reminders">任务提醒</string>
+    <string name="task_reminder_title">待办提醒</string>
+    <string name="reminder_time">提醒时间</string>
+    <string name="set_reminder">设置提醒</string>
+    <string name="no_reminder">不提醒</string>
+    <string name="reminder_permission_required">请允许通知，以接收任务提醒。</string>
+    <string-array name="widget_weekdays">
+        <item>一</item><item>二</item><item>三</item><item>四</item><item>五</item><item>六</item><item>日</item>
+    </string-array>
 </resources>

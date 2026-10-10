@@ -50,17 +50,26 @@ Implemented in this milestone:
 - Month-scoped task overview grouped by date, with completion toggles and day-popup shortcuts
 - Compact, scrollable day editor popup
 
-### Milestone 5 — Home screen widgets
+### Milestone 5 — Home screen widgets (complete)
 
-- Add an at-a-glance month or agenda widget backed by persisted DayTiles content
-- Provide a quick-add task action from the widget
-- Refresh widgets after task, journal, or sticker changes
-- Verify widget date navigation and rendering across device sizes
+- Provide three independent widgets: scrollable todo list, compact task agenda, and small month view
+- Let users check off todo items directly from the list widget
+- Support optional local reminder alarms for tasks and show reminder times in the list widget
+- Refresh all widgets after task edits and preserve reminders across device restarts
 
-### Milestone 6 — Refinement
+Implemented in this milestone:
+
+- Scrollable todo widget containing every open task, checkbox actions, due dates, and optional reminder times
+- Resizable task agenda widget with a compact date header and the next open tasks
+- Small current-month widget with localized weekday headings and today's date highlighted
+- Optional task reminders with Android notification permission handling and reboot rescheduling
+- Shared widget refresh after task creation, completion changes, reminder changes, title edits, and deletion
+
+### Milestone 6 — Interaction and visual refinement (next)
 
 - Improve task ordering and overdue/today affordances
 - Add accessibility labels and compact-screen layout checks
+- Refine the month, todo, bottom bar, and widget visual system using the on-device reference
 - Review import failure states and local sticker library management
 
 ## Requirements

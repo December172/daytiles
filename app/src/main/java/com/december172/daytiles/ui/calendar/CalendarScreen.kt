@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.LaunchedEffect
 import com.december172.daytiles.R
 import com.december172.daytiles.domain.model.DayContent
 import com.december172.daytiles.data.local.TaskEntity
@@ -65,9 +66,16 @@ import java.time.format.TextStyle
 @Composable
 fun CalendarRoute(
     onOpenDay: (LocalDate) -> Unit,
+    initialDate: LocalDate? = null,
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(initialDate) {
+        initialDate?.let {
+            viewModel.selectDateAndShow(it)
+            onOpenDay(it)
+        }
+    }
     var selectedTab by remember { mutableStateOf(CalendarTab.CALENDAR) }
     CalendarScreen(
         uiState = uiState,

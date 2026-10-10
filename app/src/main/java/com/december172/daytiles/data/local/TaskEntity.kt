@@ -17,8 +17,8 @@ data class TaskEntity(
     val date: LocalDate,
     val title: String,
     val isCompleted: Boolean = false,
+    val reminderAt: Long? = null,
     val sortOrder: Int,
     val createdAt: Long,
     val updatedAt: Long,
 )
-

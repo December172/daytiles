@@ -16,11 +16,14 @@ private const val CALENDAR_ROUTE = "calendar"
 private const val DAY_POPUP_ROUTE = "day/{date}"
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(initialDate: LocalDate? = null) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = CALENDAR_ROUTE) {
         composable(CALENDAR_ROUTE) {
-            CalendarRoute(onOpenDay = { date -> navController.navigate("day/$date") })
+            CalendarRoute(
+                onOpenDay = { date -> navController.navigate("day/$date") },
+                initialDate = initialDate,
+            )
         }
         dialog(
             route = DAY_POPUP_ROUTE,

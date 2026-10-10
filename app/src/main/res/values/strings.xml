@@ -38,4 +38,23 @@
     <string name="tasks_tab">Tasks</string>
     <string name="no_tasks_this_month">No tasks this month yet.</string>
     <string name="open_day">Open day</string>
+    <string name="widget_name">DayTiles tasks</string>
+    <string name="widget_description">A compact list of your next open tasks</string>
+    <string name="widget_loading">Loading tasks…</string>
+    <string name="widget_no_tasks">No open tasks yet.</string>
+    <string name="widget_add_task">+ Add</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="todo_widget_name">DayTiles todo list</string>
+    <string name="todo_widget_description">All open tasks with checkboxes and reminders</string>
+    <string name="month_widget_name">DayTiles month</string>
+    <string name="month_widget_description">A compact month calendar</string>
+    <string name="task_reminders">Task reminders</string>
+    <string name="task_reminder_title">Task reminder</string>
+    <string name="reminder_time">Reminder time</string>
+    <string name="set_reminder">Set reminder</string>
+    <string name="no_reminder">No reminder</string>
+    <string name="reminder_permission_required">Allow notifications to receive task reminders.</string>
+    <string-array name="widget_weekdays">
+        <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
+    </string-array>
 </resources>

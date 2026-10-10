@@ -15,6 +15,15 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE date = :date ORDER BY sortOrder, id")
     fun observeForDate(date: LocalDate): Flow<List<TaskEntity>>
 
+    @Query("SELECT * FROM tasks WHERE isCompleted = 0 ORDER BY date, sortOrder, id LIMIT :limit")
+    suspend fun recentOpen(limit: Int): List<TaskEntity>
+
+    @Query("SELECT * FROM tasks WHERE isCompleted = 0 ORDER BY date, sortOrder, id")
+    suspend fun allOpen(): List<TaskEntity>
+
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
+    suspend fun findById(id: Long): TaskEntity?
+
     @Query("SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM tasks WHERE date = :date")
     suspend fun nextSortOrder(date: LocalDate): Int
 
@@ -27,4 +36,3 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: Long)
 }
-
