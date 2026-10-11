@@ -137,6 +137,14 @@ class DayRepository(
         return id
     }
 
+    suspend fun updateCourse(course: CourseEntity) {
+        planningDao.updateCourse(course)
+        appContext?.let {
+            CourseReminderScheduler.cancel(it, course.id)
+            CourseReminderScheduler.schedule(it, course)
+        }
+    }
+
     suspend fun deleteCourse(id: Long) {
         planningDao.deleteCourse(id)
         appContext?.let { CourseReminderScheduler.cancel(it, id) }

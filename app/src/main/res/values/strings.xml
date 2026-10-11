@@ -47,7 +47,13 @@
     <string name="move_next_quadrant">Move</string>
     <string name="no_tasks">No tasks</string>
     <string name="week_title">Week view</string>
-    <string name="courses_title">Course planner</string>
+    <string name="courses_title">Course timetable</string>
+    <string name="course_timetable_title">Course timetable</string>
+    <string name="course_scheduler_title">Course Scheduler</string>
+    <string name="course_scheduler_hint">Manage recurring classes here. Select a course to edit it, or remove it when it is no longer scheduled.</string>
+    <string name="course_week_range">%1$s – %2$s</string>
+    <string name="edit_course">Edit course</string>
+    <string name="course_invalid_time">End time must be later than start time.</string>
     <string name="course_name">Course name</string>
     <string name="weekday">Weekday</string>
     <string name="course_start">Start (HH:mm)</string>
