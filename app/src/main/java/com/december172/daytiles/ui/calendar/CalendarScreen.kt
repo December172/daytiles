@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +79,7 @@ fun CalendarRoute(
     openJournalInitially: Boolean = false,
     openTasksInitially: Boolean = false,
     onOpenMenu: () -> Unit = {},
+    onOpenFocus: () -> Unit = {},
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -104,6 +107,7 @@ fun CalendarRoute(
         selectedTaskTag = selectedTaskTag,
         onTaskTagSelected = { selectedTaskTag = it },
         onOpenMenu = onOpenMenu,
+        onOpenFocus = onOpenFocus,
     )
 }
 
@@ -127,6 +131,7 @@ fun CalendarScreen(
     selectedTaskTag: String? = null,
     onTaskTagSelected: (String?) -> Unit = {},
     onOpenMenu: () -> Unit = {},
+    onOpenFocus: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val navigationMenuDescription = stringResource(R.string.open_navigation_menu)
@@ -138,14 +143,20 @@ fun CalendarScreen(
                 NavigationBarItem(
                     selected = selectedTab == CalendarTab.CALENDAR,
                     onClick = { onTabSelected(CalendarTab.CALENDAR) },
-                    icon = { Text("▦") },
+                    icon = { Icon(painterResource(R.drawable.ic_fluent_calendar_month_24_regular), contentDescription = null) },
                     label = { Text(stringResource(R.string.calendar_tab)) },
                 )
                 NavigationBarItem(
                     selected = selectedTab == CalendarTab.TASKS,
                     onClick = { onTabSelected(CalendarTab.TASKS) },
-                    icon = { Text("✓") },
+                    icon = { Icon(painterResource(R.drawable.ic_fluent_clipboard_task_24_regular), contentDescription = null) },
                     label = { Text(stringResource(R.string.tasks_tab)) },
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onOpenFocus,
+                    icon = { Icon(painterResource(R.drawable.ic_fluent_timer_24_regular), contentDescription = null) },
+                    label = { Text(stringResource(R.string.focus_title)) },
                 )
             }
         },

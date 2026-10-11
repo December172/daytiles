@@ -5,19 +5,24 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.december172.daytiles.ui.calendar.CalendarRoute
 import com.december172.daytiles.ui.day.DayEditorPopup
@@ -39,31 +44,33 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val destinations = listOf(
-        "calendar" to R.string.calendar_tab,
-        "tasks" to R.string.tasks_tab,
-        "tags" to R.string.tags_title,
-        "goals" to R.string.goals_title,
-        "quadrants" to R.string.quadrants_title,
-        "week" to R.string.week_title,
-        "courses" to R.string.courses_title,
-        "focus" to R.string.focus_title,
-        "settings" to R.string.settings_title,
-        "help" to R.string.help_title,
+        DrawerDestination("calendar", R.string.calendar_tab, R.drawable.ic_fluent_calendar_month_24_regular),
+        DrawerDestination("tasks", R.string.tasks_tab, R.drawable.ic_fluent_clipboard_task_24_regular),
+        DrawerDestination("tags", R.string.tags_title, R.drawable.ic_fluent_tag_24_regular),
+        DrawerDestination("goals", R.string.goals_title, R.drawable.ic_fluent_target_24_regular),
+        DrawerDestination("quadrants", R.string.quadrants_title, R.drawable.ic_fluent_apps_list_24_regular),
+        DrawerDestination("week", R.string.week_title, R.drawable.ic_fluent_calendar_week_start_24_regular),
+        DrawerDestination("courses", R.string.course_timetable_title, R.drawable.ic_fluent_calendar_agenda_24_regular),
+        DrawerDestination("course_scheduler", R.string.course_scheduler_title, R.drawable.ic_fluent_book_24_regular),
+        DrawerDestination("settings", R.string.settings_title, R.drawable.ic_fluent_settings_24_regular),
+        DrawerDestination("help", R.string.help_title, R.drawable.ic_fluent_question_circle_24_regular),
     )
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.width(304.dp)) {
                 Text(stringResource(R.string.app_name), modifier = androidx.compose.ui.Modifier.padding(20.dp), style = MaterialTheme.typography.titleLarge)
-                destinations.forEach { (route, label) ->
+                destinations.forEach { destination ->
                     NavigationDrawerItem(
-                        label = { Text(stringResource(label)) },
-                        selected = false,
+                        label = { Text(stringResource(destination.label)) },
+                        icon = { Icon(painterResource(destination.icon), contentDescription = null) },
+                        selected = currentRoute == destination.route,
                         onClick = {
                             scope.launch { drawerState.close() }
-                            navController.navigate(route) { launchSingleTop = true }
+                            navController.navigate(destination.route) { launchSingleTop = true }
                         },
-                        modifier = androidx.compose.ui.Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp),
                     )
                 }
             }
@@ -79,6 +86,7 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
                 initialDate = initialDate,
                 openJournalInitially = openJournal,
                 onOpenMenu = { scope.launch { drawerState.open() } },
+                onOpenFocus = { navController.navigate("focus") { launchSingleTop = true } },
             )
         }
         composable("tasks") {
@@ -89,6 +97,7 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
                 onOpenJournal = { date -> navController.navigate("journal/$date") },
                 openTasksInitially = true,
                 onOpenMenu = { scope.launch { drawerState.open() } },
+                onOpenFocus = { navController.navigate("focus") { launchSingleTop = true } },
             )
         }
         dialog(
@@ -119,9 +128,16 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
             val date = LocalDate.parse(requireNotNull(entry.arguments?.getString("date")))
             JournalQuickEntryPopup(date = date, onDismiss = navController::navigateUp)
         }
-        listOf("goals", "quadrants", "week", "courses", "focus", "settings", "help", "tags").forEach { route ->
+        listOf("goals", "quadrants", "week", "courses", "course_scheduler", "settings", "help", "tags").forEach { route ->
             composable(route) { PlannerArea(route) { navController.navigateUp() } }
+        }
+        composable("focus") {
+            PlannerArea("focus", onBack = navController::navigateUp, onNavigatePrimary = { route ->
+                navController.navigate(route) { launchSingleTop = true }
+            })
         }
     }
     }
 }
+
+private data class DrawerDestination(val route: String, val label: Int, val icon: Int)

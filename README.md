@@ -4,11 +4,22 @@ DayTiles is a free, open-source, offline-first Android calendar, journal, and vi
 
 ## Screenshots
 
-### Month calendar
+Screenshots are from the Android app with system status and navigation bars cropped out. Sample views below avoid showing personal journal or task content.
 
-The calendar provides a full-height month grid, date selection, and quick access to the selected day.
-
-![DayTiles month calendar](docs/screenshots/month-view.png)
+<table>
+  <tr>
+    <td align="center"><strong>Month calendar</strong><br><img src="docs/screenshots/month-view.png" width="240" alt="DayTiles month calendar"></td>
+    <td align="center"><strong>Navigation drawer</strong><br><img src="docs/screenshots/navigation-drawer.png" width="240" alt="DayTiles navigation drawer"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Focus clock</strong><br><img src="docs/screenshots/focus-clock.png" width="240" alt="DayTiles focus clock"></td>
+    <td align="center"><strong>Course timetable</strong><br><img src="docs/screenshots/course-timetable.png" width="240" alt="DayTiles course timetable"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Course Scheduler</strong><br><img src="docs/screenshots/course-scheduler.png" width="240" alt="DayTiles Course Scheduler"></td>
+    <td align="center"><strong>Add a course</strong><br><img src="docs/screenshots/course-editor.png" width="240" alt="DayTiles add course form"></td>
+  </tr>
+</table>
 
 ## Features
 
@@ -22,10 +33,11 @@ The calendar provides a full-height month grid, date selection, and quick access
 - Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
-- Calendar and Tasks bottom navigation, including a date-grouped task list
-- Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course planner, focus clock, settings, and help
+- Calendar, Tasks, and Focus bottom navigation, including a date-grouped task list
+- Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course timetable, Course Scheduler, focus clock, settings, and help
 - Week-at-a-glance screen showing tasks and journal snippets
-- Recurring weekly course planner with weekday, time, location, and optional local reminders
+- Weekly course timetable with day columns, time slots, week navigation, and colored class blocks
+- Separate Course Scheduler to add, edit, and remove recurring courses, with weekday, time, location, and optional local reminders
 - Configurable focus clock with pause/resume, automatic break phase, optional task association, persistent notification, and widget start
 - Five resizable Android home-screen widgets with compact and expanded layouts:
   - Todo list with open tasks, due dates, reminder times, and completion actions
@@ -36,27 +48,26 @@ The calendar provides a full-height month grid, date selection, and quick access
 - English as the default language and Simplified Chinese (`zh-CN`) localization
 - Offline-first storage, with no account, ads, analytics, tracking, cloud sync, or backend
 
-## Feature completion checklist
-
-The following work is intentionally split into small steps. Implement and verify one item at a time; do not bundle the whole list into one release.
+## Features in detail
 
 ### Task organization
 
-- [x] **Subtasks** — support a parent task with an ordered checklist of child tasks, including completion state and a clear parent progress summary. Preserve existing tasks during the Room schema migration.
-- [x] **Task targets and aims** — define daily and weekly goals, show completion progress, and provide a compact punch-card count. Goal records are distinct from journal entries and tasks.
-- [x] **Four-quadrant prioritization** — optionally classify tasks by importance and urgency, then view them in a separate four-quadrant matrix. Ordinary task entry remains unclassified by default.
+- **Subtasks** — ordered, checkable child tasks with completion state and parent progress. Existing tasks are preserved through Room migrations.
+- **Task targets and aims** — daily and weekly completion goals with progress indicators and punch-card counts. Goal records are separate from journal entries and tasks.
+- **Four-quadrant prioritization** — optional importance/urgency classification shown in a dedicated priority matrix. Tasks remain uncategorized until the user assigns a priority.
 
-### Navigation and calendar views
+### Navigation and planning
 
-- [x] **Side menu** — provide a navigation drawer for settings, tags, goals, help, and planner views, with calendar and tasks directly accessible.
-- [x] **Week view** — provide a week-at-a-glance screen with dated tasks and journal snippets, plus a compact week-view widget.
-- [x] **Schedule and recurring items** — provide a weekly course planner for class names, weekdays, start/end times, locations, and local reminders. Course sessions are distinct from journal entries and tasks.
+- **Side menu** — access calendar, tasks, tags, goals, priority matrix, week view, course timetable, Course Scheduler, focus clock, settings, and help.
+- **Week view** — see dated tasks and journal snippets, with a compact week-view widget.
+- **Course timetable** — scan recurring classes in a weekly, time-based grid with weekday columns and colored course blocks.
+- **Course Scheduler** — independently manage recurring courses: create, edit, or remove a course and set its weekday, time, location, and optional local reminder.
 
 ### Focus and home-screen widgets
 
-- [x] **Focus clock** — provide an offline timer with configurable work/break durations, pause/resume, persistent notification, and optional task association.
-- [x] **Focus clock widget** — provide a compact widget for starting or checking a focus session.
-- [x] **Widget layout options** — make todo, journal, month, week, and focus widgets resizable, with content adapted for compact and expanded sizes.
+- **Focus clock** — offline timer with configurable focus/break durations, pause/resume, persistent notification, and optional task association.
+- **Focus clock widget** — start or check a focus session from the home screen.
+- **Widget layout options** — todo, journal, month, week, and focus widgets resize and adapt their content to compact or expanded sizes.
 
 ## Build and test
 
@@ -98,5 +109,6 @@ DayTiles works offline. Internet access is used only when the user explicitly do
 
 - December172 — project creator and maintainer
 - OpenAI Codex / ChatGPT — development collaboration, implementation, testing, and documentation
+- Fluent System Icons by Microsoft — navigation icons, from the [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) project; see [third-party licenses](THIRD_PARTY_LICENSES.md)
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for contribution details.

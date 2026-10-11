@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -19,6 +20,9 @@ interface PlanningDao {
 
     @Insert
     suspend fun addCourse(course: CourseEntity): Long
+
+    @Update
+    suspend fun updateCourse(course: CourseEntity)
 
     @Query("DELETE FROM courses WHERE id = :id")
     suspend fun deleteCourse(id: Long)

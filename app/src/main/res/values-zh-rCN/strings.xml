@@ -47,7 +47,13 @@
     <string name="move_next_quadrant">移动</string>
     <string name="no_tasks">暂无任务</string>
     <string name="week_title">周视图</string>
-    <string name="courses_title">课程计划</string>
+    <string name="courses_title">课程表</string>
+    <string name="course_timetable_title">课程表</string>
+    <string name="course_scheduler_title">课程管理</string>
+    <string name="course_scheduler_hint">在此管理每周重复的课程。点击课程可编辑，不再安排的课程可以删除。</string>
+    <string name="course_week_range">%1$s – %2$s</string>
+    <string name="edit_course">编辑课程</string>
+    <string name="course_invalid_time">结束时间必须晚于开始时间。</string>
     <string name="course_name">课程名称</string>
     <string name="weekday">星期</string>
     <string name="course_start">开始时间（HH:mm）</string>
