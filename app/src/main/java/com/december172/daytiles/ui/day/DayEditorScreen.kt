@@ -11,11 +11,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
+import com.december172.daytiles.ui.components.PlannerTopBar
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
@@ -209,30 +214,19 @@ private fun TaskEditorScreen(
         }
     }
 
-    Scaffold { padding ->
+    Scaffold(modifier = Modifier.imePadding(), topBar = {
+        PlannerTopBar(stringResource(if (task == null) R.string.new_task else R.string.edit_task), onBack) {
+            TextButton(
+                onClick = { onSave(TaskDraft(title, details, tags, reminderAt, subtaskTitles.orEmpty(), importance, urgency, prioritySet)) },
+                enabled = title.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        }
+    }) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(padding)
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
-                Text(
-                    text = stringResource(if (task == null) R.string.new_task else R.string.edit_task),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                TextButton(
-                    onClick = {
-                        onSave(TaskDraft(title, details, tags, reminderAt, subtaskTitles.orEmpty(), importance, urgency, prioritySet))
-                    },
-                    enabled = title.isNotBlank(),
-                ) { Text(stringResource(R.string.save)) }
-            }
             if (onDelete != null) {
                 TextButton(onClick = { confirmDelete = true }) {
                     Text(stringResource(R.string.delete_task))
@@ -248,20 +242,19 @@ private fun TaskEditorScreen(
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.task_title)) },
-                singleLine = true,
+            val inputColors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant,
             )
-            OutlinedTextField(
-                value = details,
-                onValueChange = { details = it },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
-                label = { Text(stringResource(R.string.task_details)) },
-                placeholder = { Text(stringResource(R.string.task_details_hint)) },
-                minLines = 4,
+            TextField(
+                value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.task_title)) },
+                singleLine = true, colors = inputColors, textStyle = MaterialTheme.typography.titleLarge,
+            )
+            TextField(
+                value = details, onValueChange = { details = it }, modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                placeholder = { Text(stringResource(R.string.task_details_hint)) }, minLines = 3, colors = inputColors,
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.task_priority), style = MaterialTheme.typography.titleMedium)
@@ -423,8 +416,8 @@ fun DayEditorPopup(date: LocalDate, onDismiss: () -> Unit) {
             .fillMaxWidth(0.94f)
             .fillMaxHeight(0.9f)
             .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 8.dp,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 0.dp,
     ) {
         DayEditorRoute(date = date, onBack = onDismiss)
     }
@@ -448,8 +441,8 @@ fun JournalQuickEntryPopup(date: LocalDate, onDismiss: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth(0.94f)
             .fillMaxHeight(0.55f),
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 8.dp,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 0.dp,
     ) {
         Column(
             modifier = Modifier

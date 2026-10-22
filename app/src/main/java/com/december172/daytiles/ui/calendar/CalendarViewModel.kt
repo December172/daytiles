@@ -93,7 +93,7 @@ class CalendarViewModel(private val repository: DayRepository) : ViewModel() {
         viewModelScope.launch { repository.setTaskCompleted(task, completed) }
     }
 
-    private fun showMonth(month: YearMonth) {
+    fun showMonth(month: YearMonth) {
         val selectedDay = min(selectedDate.value.dayOfMonth, month.lengthOfMonth())
         selectedDate.value = month.atDay(selectedDay)
         visibleMonth.value = month

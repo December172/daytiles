@@ -8,32 +8,36 @@ Screenshots are from the Android app with system status and navigation bars crop
 
 <table>
   <tr>
-    <td align="center"><strong>Month calendar</strong><br><img src="docs/screenshots/month-view.png" width="240" alt="DayTiles month calendar"></td>
-    <td align="center"><strong>Navigation drawer</strong><br><img src="docs/screenshots/navigation-drawer.png" width="240" alt="DayTiles navigation drawer"></td>
+    <td align="center"><strong>Month calendar</strong><br><img src="docs/screenshots/month-view.png" width="240" alt="DayTiles redesigned month calendar"></td>
+    <td align="center"><strong>Quick task entry</strong><br><img src="docs/screenshots/quick-task-entry.png" width="240" alt="DayTiles bottom task composer"></td>
   </tr>
   <tr>
-    <td align="center"><strong>Focus clock</strong><br><img src="docs/screenshots/focus-clock.png" width="240" alt="DayTiles focus clock"></td>
-    <td align="center"><strong>Course timetable</strong><br><img src="docs/screenshots/course-timetable.png" width="240" alt="DayTiles course timetable"></td>
+    <td align="center"><strong>Navigation drawer</strong><br><img src="docs/screenshots/navigation-drawer.png" width="240" alt="DayTiles redesigned navigation drawer"></td>
+    <td align="center"><strong>Targets</strong><br><img src="docs/screenshots/task-targets.png" width="240" alt="DayTiles target page"></td>
   </tr>
   <tr>
-    <td align="center"><strong>Course Scheduler</strong><br><img src="docs/screenshots/course-scheduler.png" width="240" alt="DayTiles Course Scheduler"></td>
-    <td align="center"><strong>Add a course</strong><br><img src="docs/screenshots/course-editor.png" width="240" alt="DayTiles add course form"></td>
+    <td align="center"><strong>Widget catalogue</strong><br><img src="docs/screenshots/widget-catalogue.png" width="240" alt="DayTiles widget catalogue"></td>
+    <td align="center"><strong>Planning tools</strong><br><img src="docs/screenshots/planning-tools.png" width="240" alt="DayTiles Me page with planning tools"></td>
   </tr>
 </table>
 
+The [reference appearance milestone](docs/redesign.md) documents the redesign,
+verification, and remaining visual differences.
+
 ## Features
 
-- Full-height month calendar with month navigation, a Today shortcut, and selectable dates
+- Full-height, Sunday-first month calendar with swipe navigation, a month picker, offline lunar dates, a Today shortcut, and selectable dates
 - Daily journal entries stored separately from tasks and stickers, with automatic saving
-- Dated tasks with a dedicated full-screen create/edit form for title, details, tags, and optional reminder alarms
+- Dated tasks with a bottom quick-entry panel and a full-screen editor for title, details, tags, subtasks, and optional reminder alarms
 - Ordered, checkable subtasks on tasks, with completion progress and data-preserving Room migration
-- Daily and weekly completed-task targets with progress bars and goal punch-card counts
+- Daily and weekly completed-task targets with a week strip, goal editor, progress bars, and goal punch-card counts
 - Optional importance/urgency classification with a separate four-quadrant priority matrix
 - Task completion, deletion, due-date grouping, tag filtering, and overdue indicators in the task overview
 - Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
-- Calendar, Tasks, and Focus bottom navigation, including a date-grouped task list
+- Schedule, View, Target, Widget, and Me bottom navigation, including a date-grouped task list with circular completion controls
+- Grouped local planning tools and an in-app widget catalogue with launcher pin requests
 - Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course timetable, Course Scheduler, focus clock, settings, and help
 - Week-at-a-glance screen showing tasks and journal snippets
 - Weekly course timetable with day columns, time slots, week navigation, and colored class blocks
@@ -97,7 +101,9 @@ app/src/main/java/com/december172/daytiles/
 ├── widget/            # Android home-screen widgets
 └── ui/
     ├── calendar/      # Month state, date algorithms, and calendar UI
-    ├── day/           # Daily journal and task editor
+    ├── components/    # Shared toolbars and primary navigation
+    ├── day/           # Daily journal, quick task entry, and task editor
+    ├── planner/       # Goals, widgets, focus clock, and planning tools
     └── theme/         # Material 3 theme
 ```
 

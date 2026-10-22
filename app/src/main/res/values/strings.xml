@@ -137,4 +137,28 @@
     <string-array name="widget_weekdays">
         <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
     </string-array>
+    <string name="schedule_tab">Schedule</string>
+    <string name="view_tab">View</string>
+    <string name="target_tab">Target</string>
+    <string name="widgets_tab">Widget</string>
+    <string name="me_tab">Me</string>
+    <string name="choose_month">Choose month</string>
+    <string name="previous_year">Previous year</string>
+    <string name="next_year">Next year</string>
+    <string name="planner_tools">Planning tools</string>
+    <string name="local_notebook">A little space for every day</string>
+    <string name="widgets_hint">Keep your planner close. Add a DayTiles widget to your home screen.</string>
+    <string name="pin_widget">Add to home screen</string>
+    <string name="widget_pin_unavailable">To add widgets, touch and hold an empty area on your home screen.</string>
+    <string name="widget_pin_failed">Could not open the launcher widget picker. You can add it from your home screen.</string>
+    <string name="all_filter">All</string>
+    <string name="task_todo">To do</string>
+    <string name="task_done">Completed</string>
+    <string name="empty_schedule_title">Make room for your day</string>
+    <string name="empty_schedule_hint">Tap + to add your first task.</string>
+    <string name="month_tasks">Tasks this month</string>
+    <string name="choose_date">Choose date</string>
+    <string name="todo_uncheck_accessibility">Mark %1$s incomplete</string>
+    <string name="no_goal">No target available</string>
+    <string name="add_goal_hint">Tap + to set a task goal</string>
 </resources>

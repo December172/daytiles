@@ -9,6 +9,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +33,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.december172.daytiles.ui.components.PlannerBottomBar
+import com.december172.daytiles.ui.components.PlannerTopBar
 import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.R
 import com.december172.daytiles.data.local.CourseEntity
@@ -42,7 +49,7 @@ import java.time.temporal.TemporalAdjusters
 @Composable
 fun PlannerArea(route: String, onNavigatePrimary: (String) -> Unit = {}, onBack: () -> Unit) {
     when (route) {
-        "goals" -> GoalsScreen(onBack)
+        "goals" -> GoalsScreen(onBack, onNavigatePrimary)
         "quadrants" -> QuadrantsScreen(onBack)
         "week" -> WeekScreen(onBack)
         "courses" -> CoursesScreen(onBack)
@@ -61,12 +68,7 @@ private fun PlannerScaffold(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(title) },
-            navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.back)) } },
-        )
-    }, bottomBar = bottomBar) { insets ->
+    Scaffold(topBar = { PlannerTopBar(title, onBack) }, bottomBar = bottomBar) { insets ->
         Column(
             Modifier.fillMaxSize().padding(insets).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -76,39 +78,99 @@ private fun PlannerScaffold(
 }
 
 @Composable
-private fun GoalsScreen(onBack: () -> Unit) {
+private fun GoalsScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit) {
     val repo = (LocalContext.current.applicationContext as DayTilesApplication).repository
     val today = LocalDate.now()
     val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    var weekly by remember { mutableStateOf(false) }
-    var target by remember { mutableIntStateOf(5) }
-    var completed by remember { mutableIntStateOf(0) }
+    val locale = LocalConfiguration.current.locales[0]
+    var selectedEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
+    val selectedDate = LocalDate.ofEpochDay(selectedEpoch)
+    var weekly by rememberSaveable { mutableStateOf(false) }
+    var target by remember { mutableIntStateOf(3) }
+    var savedTarget by remember { mutableStateOf<Int?>(null) }
+    var showEditor by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val start = if (weekly) monday else today
-    LaunchedEffect(weekly) {
-        target = repo.goal(if (weekly) "WEEK" else "DAY", start)?.targetCount ?: if (weekly) 10 else 3
-        val tasks = repo.tasksBetween(start, if (weekly) monday.plusDays(6) else today)
-        completed = tasks.count { it.isCompleted }
+    val start = if (weekly) monday else selectedDate
+    val end = if (weekly) monday.plusDays(6) else selectedDate
+    val tasks by remember(start, end) { repo.observeTasksBetween(start, end) }.collectAsStateWithLifecycle(emptyList())
+    val completed = tasks.count { it.isCompleted }
+    LaunchedEffect(start, weekly) {
+        savedTarget = repo.goal(if (weekly) "WEEK" else "DAY", start)?.targetCount
+        target = savedTarget ?: if (weekly) 10 else 3
     }
-    PlannerScaffold(stringResource(R.string.goals_title), onBack) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            FilterChip(selected = !weekly, onClick = { weekly = false }, label = { Text(stringResource(R.string.daily_goal)) })
-            Spacer(Modifier.width(8.dp))
-            FilterChip(selected = weekly, onClick = { weekly = true }, label = { Text(stringResource(R.string.weekly_goal)) })
+    Scaffold(
+        topBar = { PlannerTopBar(stringResource(R.string.target_tab), onBack) },
+        bottomBar = { PlannerBottomBar("goals", onNavigatePrimary) },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showEditor = true }, shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(60.dp), elevation = FloatingActionButtonDefaults.elevation(0.dp)) {
+                Icon(painterResource(R.drawable.ic_planner_add), stringResource(R.string.goal_target), Modifier.size(32.dp))
+            }
+        },
+    ) { insets ->
+        Column(Modifier.fillMaxSize().padding(insets)) {
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)) {
+                (0L..6L).forEach { offset ->
+                    val date = monday.plusDays(offset)
+                    Column(Modifier.weight(1f).clickable { selectedEpoch = date.toEpochDay(); weekly = false }.padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale), fontSize = 12.sp,
+                            color = if (offset >= 5) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Box(Modifier.size(30.dp).then(if (date == selectedDate) Modifier.background(MaterialTheme.colorScheme.primary, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+                            Text(date.dayOfMonth.toString(), fontSize = 17.sp,
+                                color = if (date == selectedDate) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+            }
+            val goal = savedTarget
+            if (goal == null) {
+                Column(Modifier.weight(1f).fillMaxWidth().padding(bottom = 90.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(painterResource(R.drawable.ic_fluent_target_24_regular), null, Modifier.size(104.dp), tint = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(Modifier.height(22.dp))
+                    Text(stringResource(R.string.no_goal), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 17.sp)
+                    Spacer(Modifier.height(10.dp))
+                    Text(stringResource(R.string.add_goal_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                }
+            } else {
+                Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface,
+                    onClick = { target = goal; showEditor = true }) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(stringResource(if (weekly) R.string.weekly_goal else R.string.daily_goal), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.goal_progress, completed, goal), style = MaterialTheme.typography.headlineSmall)
+                        LinearProgressIndicator(progress = { (completed.toFloat() / goal).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+                        Text(stringResource(R.string.goal_punchcard, completed / goal), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
-        Text(stringResource(R.string.goal_progress, completed, target), style = MaterialTheme.typography.headlineSmall)
-        LinearProgressIndicator(progress = { (completed.toFloat() / target).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.goal_target))
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = { target = (target - 1).coerceAtLeast(1) }) { Text("−") }
-            Text(target.toString())
-            IconButton(onClick = { target += 1 }) { Text("+") }
-        }
-        Button(onClick = { scope.launch { repo.saveGoal(if (weekly) "WEEK" else "DAY", start, target) } }) {
-            Text(stringResource(R.string.save))
-        }
-        Text(stringResource(R.string.goal_punchcard, (completed / target).coerceAtLeast(0)), style = MaterialTheme.typography.titleMedium)
+    }
+    if (showEditor) {
+        AlertDialog(onDismissRequest = { showEditor = false }, title = { Text(stringResource(R.string.goals_title)) }, text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(!weekly, { weekly = false }, label = { Text(stringResource(R.string.daily_goal)) })
+                    FilterChip(weekly, { weekly = true }, label = { Text(stringResource(R.string.weekly_goal)) })
+                }
+                Text(stringResource(R.string.goal_target))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { target = (target - 1).coerceAtLeast(1) }) { Text("−") }
+                    Text(target.toString(), Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.headlineMedium)
+                    IconButton(onClick = { target++ }) { Text("+") }
+                }
+            }
+        }, confirmButton = {
+            TextButton(onClick = {
+                scope.launch {
+                    repo.saveGoal(if (weekly) "WEEK" else "DAY", start, target)
+                    savedTarget = target
+                    showEditor = false
+                }
+            }) { Text(stringResource(R.string.save)) }
+        }, dismissButton = { TextButton(onClick = { showEditor = false }) { Text(stringResource(R.string.cancel)) } })
     }
 }
 
@@ -402,26 +464,7 @@ private fun FocusScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
         stringResource(R.string.focus_title),
         onBack,
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onNavigatePrimary("calendar") },
-                    icon = { Icon(painterResource(R.drawable.ic_fluent_calendar_month_24_regular), contentDescription = null) },
-                    label = { Text(stringResource(R.string.calendar_tab)) },
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onNavigatePrimary("tasks") },
-                    icon = { Icon(painterResource(R.drawable.ic_fluent_clipboard_task_24_regular), contentDescription = null) },
-                    label = { Text(stringResource(R.string.tasks_tab)) },
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(painterResource(R.drawable.ic_fluent_timer_24_regular), contentDescription = null) },
-                    label = { Text(stringResource(R.string.focus_title)) },
-                )
-            }
+            PlannerBottomBar("focus", onNavigatePrimary)
         },
     ) {
         Text(stringResource(if (phase == FocusTimerService.PHASE_BREAK) R.string.focus_break_phase else R.string.focus_work_phase), style = MaterialTheme.typography.titleMedium)

@@ -24,3 +24,15 @@ fun buildMonthWeeks(
     }.chunked(DayOfWeek.entries.size)
 }
 
+
+/** Continuous dates for the edge-to-edge month view, including adjacent months. */
+fun buildDisplayMonthWeeks(
+    month: YearMonth,
+    firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY,
+): List<List<LocalDate>> {
+    val first = month.atDay(1)
+    val leading = Math.floorMod(first.dayOfWeek.value - firstDayOfWeek.value, 7)
+    val count = ((leading + month.lengthOfMonth() + 6) / 7) * 7
+    val start = first.minusDays(leading.toLong())
+    return List(count) { start.plusDays(it.toLong()) }.chunked(7)
+}
