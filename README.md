@@ -19,6 +19,10 @@ Screenshots are from the Android app with system status and navigation bars crop
     <td align="center"><strong>Widget catalogue</strong><br><img src="docs/screenshots/widget-catalogue.png" width="240" alt="DayTiles widget catalogue"></td>
     <td align="center"><strong>Planning tools</strong><br><img src="docs/screenshots/planning-tools.png" width="240" alt="DayTiles Me page with planning tools"></td>
   </tr>
+  <tr>
+    <td align="center"><strong>Course timetable</strong><br><img src="docs/screenshots/course-timetable.png" width="240" alt="DayTiles unified course timetable"></td>
+    <td align="center"><strong>Calendar settings</strong><br><img src="docs/screenshots/calendar-settings.png" width="240" alt="DayTiles lunar date display setting"></td>
+  </tr>
 </table>
 
 The [reference appearance milestone](docs/redesign.md) documents the redesign,
@@ -37,11 +41,11 @@ verification, and remaining visual differences.
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
 - Schedule, View, Target, Widget, and Me bottom navigation, including a date-grouped task list with circular completion controls
-- Grouped local planning tools and an in-app widget catalogue with launcher pin requests
-- Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course timetable, Course Scheduler, focus clock, settings, and help
+- Grouped local planning tools and an in-app widget catalogue with confirmed placement feedback, retry, and manual-add instructions
+- Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course timetable, focus clock, settings, and help
 - Week-at-a-glance screen showing tasks and journal snippets
-- Weekly course timetable with day columns, time slots, week navigation, and colored class blocks
-- Separate Course Scheduler to add, edit, and remove recurring courses, with weekday, time, location, and optional local reminders
+- Unified weekly course timetable with day columns, time slots, week navigation, colored class blocks, and course management; add from an empty slot or edit a class directly
+- Persistent setting to show or hide Chinese lunar dates in the month calendar
 - Configurable focus clock with pause/resume, automatic break phase, optional task association, persistent notification, and widget start
 - Five resizable Android home-screen widgets with compact and expanded layouts:
   - Todo list with open tasks, due dates, reminder times, and completion actions
@@ -62,16 +66,17 @@ verification, and remaining visual differences.
 
 ### Navigation and planning
 
-- **Side menu** — access calendar, tasks, tags, goals, priority matrix, week view, course timetable, Course Scheduler, focus clock, settings, and help.
+- **Side menu** — access calendar, tasks, tags, goals, priority matrix, week view, course timetable, focus clock, settings, and help. Week view appears once in the drawer's shortcut row.
 - **Week view** — see dated tasks and journal snippets, with a compact week-view widget.
-- **Course timetable** — scan recurring classes in a weekly, time-based grid with weekday columns and colored course blocks.
-- **Course Scheduler** — independently manage recurring courses: create, edit, or remove a course and set its weekday, time, location, and optional local reminder.
+- **Course timetable** — view and manage recurring classes in one weekly grid. Tap an empty time slot or + to create a course; tap a class to edit or delete it. The full-page editor sets weekday, start/end time, location, and an optional local reminder. Overlapping classes remain individually selectable, and the toolbar opens a course list within the same screen.
+- **Calendar settings** — show or hide Chinese lunar date labels. The preference is stored locally and survives app restarts.
 
 ### Focus and home-screen widgets
 
 - **Focus clock** — offline timer with configurable focus/break durations, pause/resume, persistent notification, and optional task association.
 - **Focus clock widget** — start or check a focus session from the home screen.
 - **Widget layout options** — todo, journal, month, week, and focus widgets resize and adapt their content to compact or expanded sizes.
+- **Add to home screen** — requests the launcher's native confirmation and reports success only after its placement callback. If placement is unsupported or remains unconfirmed, the app offers retry and manual steps with an action to open the home screen. Placement requires launcher support and available space.
 
 ## Build and test
 

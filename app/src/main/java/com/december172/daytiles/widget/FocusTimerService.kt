@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import androidx.core.content.edit
 import com.december172.daytiles.MainActivity
 import com.december172.daytiles.R
 import kotlinx.coroutines.CoroutineScope
@@ -29,31 +30,47 @@ class FocusTimerService : Service() {
             ACTION_START -> {
                 val work = intent.getLongExtra(EXTRA_WORK, 25 * 60_000L)
                 val rest = intent.getLongExtra(EXTRA_BREAK, 5 * 60_000L)
-                prefs.edit().putString(KEY_PHASE, PHASE_WORK).putLong(KEY_BREAK, rest)
-                    .putLong(KEY_END, System.currentTimeMillis() + work).putString(KEY_TASK, intent.getStringExtra(EXTRA_TASK_TITLE))
-                    .putLong(KEY_TASK_ID, intent.getLongExtra(EXTRA_TASK_ID, 0L))
-                    .remove(KEY_REMAINING).apply()
+                prefs.edit {
+                    putString(KEY_PHASE, PHASE_WORK)
+                    putLong(KEY_BREAK, rest)
+                    putLong(KEY_END, System.currentTimeMillis() + work)
+                    putString(KEY_TASK, intent.getStringExtra(EXTRA_TASK_TITLE))
+                    putLong(KEY_TASK_ID, intent.getLongExtra(EXTRA_TASK_ID, 0L))
+                    remove(KEY_REMAINING)
+                }
                 startForegroundCompat(notification(work, false))
                 refreshWidgets()
                 tick()
             }
             ACTION_PAUSE -> {
                 val remaining = (prefs.getLong(KEY_END, 0L) - System.currentTimeMillis()).coerceAtLeast(0)
-                prefs.edit().putLong(KEY_REMAINING, remaining).remove(KEY_END).apply()
+                prefs.edit {
+                    putLong(KEY_REMAINING, remaining)
+                    remove(KEY_END)
+                }
                 ticker?.cancel()
                 updateNotification(notification(remaining, true))
                 refreshWidgets()
             }
             ACTION_RESUME -> {
                 val remaining = prefs.getLong(KEY_REMAINING, 0L)
-                prefs.edit().putLong(KEY_END, System.currentTimeMillis() + remaining).remove(KEY_REMAINING).apply()
+                prefs.edit {
+                    putLong(KEY_END, System.currentTimeMillis() + remaining)
+                    remove(KEY_REMAINING)
+                }
                 updateNotification(notification(remaining, false))
                 refreshWidgets()
                 tick()
             }
             ACTION_STOP -> {
                 ticker?.cancel()
-                prefs.edit().remove(KEY_END).remove(KEY_REMAINING).remove(KEY_PHASE).remove(KEY_TASK).remove(KEY_TASK_ID).apply()
+                prefs.edit {
+                    remove(KEY_END)
+                    remove(KEY_REMAINING)
+                    remove(KEY_PHASE)
+                    remove(KEY_TASK)
+                    remove(KEY_TASK_ID)
+                }
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 refreshWidgets()
                 stopSelf()
@@ -77,12 +94,17 @@ class FocusTimerService : Service() {
                 if (remaining == 0L) {
                     if (prefs.getString(KEY_PHASE, PHASE_WORK) == PHASE_WORK && prefs.getLong(KEY_BREAK, 0L) > 0) {
                         val breakDuration = prefs.getLong(KEY_BREAK, 0L)
-                        prefs.edit().putString(KEY_PHASE, PHASE_BREAK)
-                            .putLong(KEY_END, System.currentTimeMillis() + breakDuration).apply()
+                        prefs.edit {
+                            putString(KEY_PHASE, PHASE_BREAK)
+                            putLong(KEY_END, System.currentTimeMillis() + breakDuration)
+                        }
                         updateNotification(notification(breakDuration, false))
                         refreshWidgets()
                     } else {
-                        prefs.edit().remove(KEY_END).remove(KEY_PHASE).apply()
+                        prefs.edit {
+                            remove(KEY_END)
+                            remove(KEY_PHASE)
+                        }
                         stopForeground(STOP_FOREGROUND_REMOVE)
                         refreshWidgets()
                         stopSelf()
@@ -96,8 +118,7 @@ class FocusTimerService : Service() {
     }
 
     private fun notification(remaining: Long, paused: Boolean) =
-        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) android.app.Notification.Builder(this, CHANNEL)
-        else @Suppress("DEPRECATION") android.app.Notification.Builder(this))
+        android.app.Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(prefs.getString(KEY_TASK, null)?.let { getString(R.string.focus_linked_task, it) }
                 ?: getString(if (prefs.getString(KEY_PHASE, PHASE_WORK) == PHASE_BREAK) R.string.focus_break else R.string.focus_title))
@@ -119,11 +140,9 @@ class FocusTimerService : Service() {
     )
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL, getString(R.string.focus_title), NotificationManager.IMPORTANCE_LOW),
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL, getString(R.string.focus_title), NotificationManager.IMPORTANCE_LOW),
+        )
     }
 
     private fun startForegroundCompat(notification: android.app.Notification) {

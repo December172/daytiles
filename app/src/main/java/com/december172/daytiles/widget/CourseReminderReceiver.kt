@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.december172.daytiles.R
 import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.CourseReminderScheduler
@@ -27,11 +26,10 @@ class CourseReminderReceiver : BroadcastReceiver() {
             return
         }
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) manager.createNotificationChannel(
+        manager.createNotificationChannel(
             NotificationChannel(CHANNEL, context.getString(R.string.courses_title), NotificationManager.IMPORTANCE_DEFAULT),
         )
-        val builder = if (Build.VERSION.SDK_INT >= 26) android.app.Notification.Builder(context, CHANNEL)
-        else @Suppress("DEPRECATION") android.app.Notification.Builder(context)
+        val builder = android.app.Notification.Builder(context, CHANNEL)
         manager.notify(
             intent.getLongExtra(EXTRA_ID, 0L).toInt(),
             builder.setSmallIcon(R.drawable.ic_launcher)

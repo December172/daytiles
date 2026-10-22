@@ -7,9 +7,6 @@
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="80dp"
-    android:previewLayout="@layout/widget_daytiles"
     android:resizeMode="horizontal|vertical"
-    android:targetCellWidth="2"
-    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

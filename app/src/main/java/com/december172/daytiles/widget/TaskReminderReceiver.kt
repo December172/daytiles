@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.december172.daytiles.R
 import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.data.TaskReminderScheduler
@@ -30,17 +29,10 @@ class TaskReminderReceiver : BroadcastReceiver() {
             return
         }
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, context.getString(R.string.task_reminders), NotificationManager.IMPORTANCE_DEFAULT),
-            )
-        }
-        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            android.app.Notification.Builder(context, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION")
-            android.app.Notification.Builder(context)
-        }
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, context.getString(R.string.task_reminders), NotificationManager.IMPORTANCE_DEFAULT),
+        )
+        val notification = android.app.Notification.Builder(context, CHANNEL_ID)
         manager.notify(
             System.currentTimeMillis().toInt(),
             notification

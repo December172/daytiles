@@ -64,7 +64,6 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
         DrawerDestination("quadrants", R.string.quadrants_title, R.drawable.ic_fluent_apps_list_24_regular),
         DrawerDestination("week", R.string.week_title, R.drawable.ic_fluent_calendar_week_start_24_regular),
         DrawerDestination("courses", R.string.course_timetable_title, R.drawable.ic_fluent_calendar_agenda_24_regular),
-        DrawerDestination("course_scheduler", R.string.course_scheduler_title, R.drawable.ic_fluent_book_24_regular),
         DrawerDestination("focus", R.string.focus_title, R.drawable.ic_fluent_timer_24_regular),
         DrawerDestination("settings", R.string.settings_title, R.drawable.ic_fluent_settings_24_regular),
         DrawerDestination("help", R.string.help_title, R.drawable.ic_fluent_question_circle_24_regular),
@@ -91,7 +90,7 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
                     Text(stringResource(R.string.local_notebook), Modifier.padding(start = 24.dp, top = 4.dp, bottom = 24.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        listOf(destinations[0], destinations[5], destinations[1]).forEach { destination ->
+                        listOf("calendar", "week", "tasks").map { route -> destinations.first { it.route == route } }.forEach { destination ->
                             Column(Modifier.weight(1f).clickable { openDestination(destination.route) }.padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Box(Modifier.size(38.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), contentAlignment = Alignment.Center) {
@@ -104,7 +103,7 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
                     HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                     Text(stringResource(R.string.planner_tools), Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    destinations.filter { it.route !in listOf("settings", "help") }.forEach { destination ->
+                    destinations.filter { it.route !in listOf("calendar", "week", "tasks", "settings", "help") }.forEach { destination ->
                         NavigationDrawerItem(
                             label = { Text(stringResource(destination.label), fontSize = 15.sp) },
                             icon = { Icon(painterResource(destination.icon), null, Modifier.size(22.dp)) },

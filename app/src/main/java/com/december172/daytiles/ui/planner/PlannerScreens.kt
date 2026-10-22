@@ -29,15 +29,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.content.edit
 import com.december172.daytiles.ui.components.PlannerBottomBar
 import com.december172.daytiles.ui.components.PlannerTopBar
 import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.R
-import com.december172.daytiles.data.local.CourseEntity
 import com.december172.daytiles.data.local.TaskEntity
 import com.december172.daytiles.widget.FocusTimerService
 import kotlinx.coroutines.launch
@@ -52,10 +53,10 @@ fun PlannerArea(route: String, onNavigatePrimary: (String) -> Unit = {}, onBack:
         "goals" -> GoalsScreen(onBack, onNavigatePrimary)
         "quadrants" -> QuadrantsScreen(onBack)
         "week" -> WeekScreen(onBack)
-        "courses" -> CoursesScreen(onBack)
-        "course_scheduler" -> CourseSchedulerScreen(onBack)
+        "courses", "course_scheduler" -> CoursesScreen(onBack)
         "focus" -> FocusScreen(onBack, onNavigatePrimary)
-        "settings", "help" -> InfoScreen(route, onBack)
+        "settings" -> SettingsScreen(onBack)
+        "help" -> InfoScreen(route, onBack)
         "tags" -> TagsScreen(onBack)
     }
 }
@@ -140,7 +141,7 @@ private fun GoalsScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
                     onClick = { target = goal; showEditor = true }) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(stringResource(if (weekly) R.string.weekly_goal else R.string.daily_goal), style = MaterialTheme.typography.titleMedium)
-                        Text(stringResource(R.string.goal_progress, completed, goal), style = MaterialTheme.typography.headlineSmall)
+                        Text(pluralStringResource(R.plurals.goal_progress, goal, completed, goal), style = MaterialTheme.typography.headlineSmall)
                         LinearProgressIndicator(progress = { (completed.toFloat() / goal).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                         Text(stringResource(R.string.goal_punchcard, completed / goal), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -247,171 +248,6 @@ private fun WeekScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun CoursesScreen(onBack: () -> Unit) {
-    val repo = (LocalContext.current.applicationContext as DayTilesApplication).repository
-    val courses by repo.observeCourses().collectAsStateWithLifecycle(emptyList())
-    var monday by remember { mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))) }
-    val locale = LocalConfiguration.current.locales[0]
-    val dayLabels = (0L..6L).map { monday.plusDays(it).dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale) }
-    val startMinute = 7 * 60
-    val endMinute = 22 * 60
-    val hourHeight = 64.dp
-    val labelWidth = 48.dp
-    PlannerScaffold(stringResource(R.string.course_timetable_title), onBack) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { monday = monday.minusWeeks(1) }) { Text("‹") }
-            Text(stringResource(R.string.course_week_range, monday.toString(), monday.plusDays(6).toString()), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-            TextButton(onClick = { monday = monday.plusWeeks(1) }) { Text("›") }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.width(labelWidth))
-            (0L..6L).forEach { offset ->
-                val day = monday.plusDays(offset)
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(dayLabels[offset.toInt()], style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    Text(day.dayOfMonth.toString(), style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
-            Column(Modifier.width(labelWidth)) {
-                (startMinute / 60 until endMinute / 60).forEach { hour ->
-                    Text("%02d:00".format(hour), style = MaterialTheme.typography.labelSmall, modifier = Modifier.height(hourHeight).padding(top = 2.dp))
-                }
-            }
-            Row(Modifier.weight(1f).height(hourHeight * ((endMinute - startMinute) / 60))) {
-                (1..7).forEach { weekday ->
-                    Box(Modifier.weight(1f).fillMaxHeight()) {
-                        Column(Modifier.fillMaxSize()) {
-                            repeat((endMinute - startMinute) / 60) {
-                                Box(Modifier.fillMaxWidth().weight(1f)) {
-                                    HorizontalDivider(Modifier.align(Alignment.TopStart), color = MaterialTheme.colorScheme.outlineVariant)
-                                }
-                            }
-                        }
-                        VerticalDivider(Modifier.align(Alignment.CenterStart), color = MaterialTheme.colorScheme.outlineVariant)
-                        courses.filter { it.weekday == weekday && it.endMinute > startMinute && it.startMinute < endMinute }.forEachIndexed { index, course ->
-                            val visibleStart = course.startMinute.coerceAtLeast(startMinute)
-                            val visibleEnd = course.endMinute.coerceAtMost(endMinute)
-                            val y = ((visibleStart - startMinute) / 60f * 64f).dp
-                            val height = (((visibleEnd - visibleStart) / 60f) * 64f).dp.coerceAtLeast(34.dp)
-                            val palette = listOf(Color(0xFFFFE9C7), Color(0xFFDDF1FF), Color(0xFFF6DDF1), Color(0xFFE0F4E8), Color(0xFFEAE5FF))
-                            Column(
-                                Modifier.fillMaxWidth().padding(horizontal = 1.dp).offset(y = y).height(height)
-                                    .background(palette[index % palette.size], RoundedCornerShape(7.dp)).padding(3.dp),
-                                verticalArrangement = Arrangement.spacedBy(1.dp),
-                            ) {
-                                Text(course.name, style = MaterialTheme.typography.labelSmall, maxLines = 3, lineHeight = MaterialTheme.typography.labelSmall.lineHeight)
-                                if (height >= 52.dp) Text(formatMinute(course.startMinute), style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                                if (course.location.isNotBlank() && height >= 64.dp) Text(course.location, style = MaterialTheme.typography.labelSmall, maxLines = 2)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CourseSchedulerScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val repo = (context.applicationContext as DayTilesApplication).repository
-    val courses by repo.observeCourses().collectAsStateWithLifecycle(emptyList())
-    val locale = LocalConfiguration.current.locales[0]
-    val scope = rememberCoroutineScope()
-    var editingCourse by remember { mutableStateOf<CourseEntity?>(null) }
-    var showEditor by remember { mutableStateOf(false) }
-    var pendingCourse by remember { mutableStateOf<CourseEntity?>(null) }
-    val reminderPermission = rememberLauncherForActivityResult(RequestPermission()) {
-        pendingCourse?.let { course -> scope.launch { if (course.id == 0L) repo.addCourse(course) else repo.updateCourse(course) } }
-        pendingCourse = null
-    }
-    PlannerScaffold(stringResource(R.string.course_scheduler_title), onBack) {
-        Text(stringResource(R.string.course_scheduler_hint), style = MaterialTheme.typography.bodyMedium)
-        Button(onClick = { editingCourse = null; showEditor = true }) { Text(stringResource(R.string.add_course)) }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(courses, key = CourseEntity::id) { course ->
-                Card {
-                    ListItem(
-                        headlineContent = { Text(course.name) },
-                        supportingContent = { Text("${DayOfWeek.of(course.weekday).getDisplayName(java.time.format.TextStyle.FULL, locale)} · ${formatMinute(course.startMinute)}–${formatMinute(course.endMinute)}${course.location.takeIf(String::isNotBlank)?.let { " · $it" } ?: ""}") },
-                        trailingContent = {
-                            Row {
-                                TextButton(onClick = { editingCourse = course; showEditor = true }) { Text(stringResource(R.string.edit)) }
-                                TextButton(onClick = { scope.launch { repo.deleteCourse(course.id) } }) { Text(stringResource(R.string.delete)) }
-                            }
-                        },
-                    )
-            }
-        }
-        }
-    }
-    if (showEditor) {
-        CourseEditorDialog(
-            initial = editingCourse,
-            onDismiss = { showEditor = false },
-            onSave = { course ->
-                showEditor = false
-                if (course.reminderMinutes > 0 && Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    pendingCourse = course
-                    reminderPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else scope.launch {
-                    if (course.id == 0L) repo.addCourse(course) else repo.updateCourse(course)
-                }
-            },
-        )
-    }
-}
-
-@Composable
-private fun CourseEditorDialog(initial: CourseEntity?, onDismiss: () -> Unit, onSave: (CourseEntity) -> Unit) {
-    val locale = LocalConfiguration.current.locales[0]
-    var name by remember(initial) { mutableStateOf(initial?.name.orEmpty()) }
-    var weekday by remember(initial) { mutableIntStateOf(initial?.weekday ?: 1) }
-    var start by remember(initial) { mutableStateOf(initial?.let { formatMinute(it.startMinute) } ?: "09:00") }
-    var end by remember(initial) { mutableStateOf(initial?.let { formatMinute(it.endMinute) } ?: "10:00") }
-    var location by remember(initial) { mutableStateOf(initial?.location.orEmpty()) }
-    var reminder by remember(initial) { mutableStateOf((initial?.reminderMinutes ?: 15).toString()) }
-    val startMinute = parseMinute(start)
-    val endMinute = parseMinute(end)
-    val valid = name.isNotBlank() && startMinute != null && endMinute != null && endMinute > startMinute
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (initial == null) R.string.add_course else R.string.edit_course)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.course_name)) }, singleLine = true)
-                Text(stringResource(R.string.weekday), style = MaterialTheme.typography.labelLarge)
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    (1..7).toList().chunked(4).forEach { days ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            days.forEach { day ->
-                                FilterChip(
-                                    selected = weekday == day,
-                                    onClick = { weekday = day },
-                                    label = { Text(DayOfWeek.of(day).getDisplayName(java.time.format.TextStyle.SHORT, locale), maxLines = 1) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(start, { start = it }, label = { Text(stringResource(R.string.course_start)) }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(end, { end = it }, label = { Text(stringResource(R.string.course_end)) }, modifier = Modifier.weight(1f), singleLine = true)
-                }
-                OutlinedTextField(location, { location = it }, label = { Text(stringResource(R.string.course_location)) }, singleLine = true)
-                OutlinedTextField(reminder, { reminder = it.filter(Char::isDigit).take(3) }, label = { Text(stringResource(R.string.course_reminder_minutes)) }, singleLine = true)
-                if (startMinute != null && endMinute != null && endMinute <= startMinute) Text(stringResource(R.string.course_invalid_time), color = MaterialTheme.colorScheme.error)
-            }
-        },
-        confirmButton = { TextButton(enabled = valid, onClick = { onSave(CourseEntity(id = initial?.id ?: 0, name = name.trim(), weekday = weekday, startMinute = startMinute!!, endMinute = endMinute!!, location = location.trim(), reminderMinutes = reminder.toIntOrNull() ?: 0, isEnabled = initial?.isEnabled ?: true)) }) { Text(stringResource(R.string.save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-@Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun FocusScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit) {
     val context = LocalContext.current
@@ -429,7 +265,10 @@ private fun FocusScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
     var phase by remember { mutableStateOf(preferences.getString(FocusTimerService.KEY_PHASE, FocusTimerService.PHASE_WORK) ?: FocusTimerService.PHASE_WORK) }
     fun startFocus() {
         workMinutes = workMinutes.coerceIn(5, 120)
-        preferences.edit().putInt("work", workMinutes).putInt("break", breakMinutes).apply()
+        preferences.edit {
+            putInt("work", workMinutes)
+            putInt("break", breakMinutes)
+        }
         endAt = System.currentTimeMillis() + workMinutes * 60_000L
         pausedRemaining = 0
         phase = FocusTimerService.PHASE_WORK
@@ -522,7 +361,7 @@ private fun FocusScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
                 }
             }
         }
-        Text(stringResource(R.string.focus_break_note, breakMinutes))
+        Text(pluralStringResource(R.plurals.focus_break_note, breakMinutes, breakMinutes))
     }
 }
 
@@ -549,11 +388,3 @@ private fun TagsScreen(onBack: () -> Unit) {
             .forEach { task -> Text(task.title, style = MaterialTheme.typography.bodyLarge) }
     }
 }
-
-private fun parseMinute(value: String): Int? = runCatching {
-    val parts = value.split(":")
-    require(parts.size == 2)
-    parts[0].toInt().also { require(it in 0..23) } * 60 + parts[1].toInt().also { require(it in 0..59) }
-}.getOrNull()
-
-private fun formatMinute(value: Int): String = "%02d:%02d".format(value / 60, value % 60)

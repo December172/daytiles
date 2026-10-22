@@ -11,7 +11,7 @@
         android:layout_width="38dp"
         android:layout_height="38dp"
         android:gravity="center"
-        android:text="○"
+        android:text="@string/task_unchecked_symbol"
         android:textColor="#F47721"
         android:textSize="23sp" />
     <LinearLayout
@@ -32,6 +32,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="#8A7E79"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 </LinearLayout>

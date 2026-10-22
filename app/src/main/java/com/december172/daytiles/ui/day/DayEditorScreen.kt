@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
@@ -123,8 +124,8 @@ fun TaskEditorRoute(date: LocalDate, taskId: Long?, onBack: () -> Unit) {
     val initialSubtasks by androidx.compose.runtime.produceState<List<SubtaskEntity>?>(null, task?.id) {
         value = task?.let { viewModel.loadSubtasks(it.id) }
     }
-    var importance by remember(task?.id) { mutableStateOf(task?.importance ?: 0) }
-    var urgency by remember(task?.id) { mutableStateOf(task?.urgency ?: 0) }
+    var importance by remember(task?.id) { mutableIntStateOf(task?.importance ?: 0) }
+    var urgency by remember(task?.id) { mutableIntStateOf(task?.urgency ?: 0) }
     var prioritySet by remember(task?.id) { mutableStateOf(task?.prioritySet ?: false) }
     val context = LocalContext.current
     var pendingSave by remember { mutableStateOf<TaskDraft?>(null) }

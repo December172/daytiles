@@ -32,9 +32,10 @@ object CourseReminderScheduler {
 
     fun cancel(context: Context, courseId: Long) {
         val intent = Intent(context, CourseReminderReceiver::class.java)
-        context.getSystemService(AlarmManager::class.java).cancel(
-            PendingIntent.getBroadcast(context, courseId.toInt(), intent, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE),
-        )
+        val pending = PendingIntent.getBroadcast(
+            context, courseId.toInt(), intent, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        ) ?: return
+        context.getSystemService(AlarmManager::class.java).cancel(pending)
     }
 
     private fun pendingIntent(context: Context, course: CourseEntity) = PendingIntent.getBroadcast(

@@ -35,7 +35,8 @@ class MonthWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_month)
             val width = manager.getAppWidgetOptions(widgetId)
                 .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
-            views.setTextViewTextSize(R.id.month_widget_grid, android.util.TypedValue.COMPLEX_UNIT_SP, if (width < 150) 8f else 10f)
+            // Keep seven columns in compact widgets; use a larger size when space allows.
+            views.setTextViewTextSize(R.id.month_widget_grid, android.util.TypedValue.COMPLEX_UNIT_SP, if (width < 150) 8f else 11f)
             val locale = DayTilesWidgetProvider.locale(context)
             views.setTextViewText(R.id.month_widget_title, month.format(DateTimeFormatter.ofPattern("MMMM yyyy", locale)))
             val weekdays = context.resources.getStringArray(R.array.widget_weekdays).joinToString("  ")

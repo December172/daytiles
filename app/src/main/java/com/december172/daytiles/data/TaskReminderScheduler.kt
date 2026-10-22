@@ -12,11 +12,7 @@ object TaskReminderScheduler {
         val reminderAt = task.reminderAt ?: return
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val alarm = pendingIntent(context, task.id, task.title)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderAt, alarm)
-        } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, reminderAt, alarm)
-        }
+        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderAt, alarm)
     }
 
     fun cancel(context: Context, taskId: Long) {

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.R
 import com.december172.daytiles.data.local.StickerAssetKind
 import com.december172.daytiles.data.local.TaskEntity
@@ -69,6 +70,8 @@ fun CalendarRoute(
     viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings = (LocalContext.current.applicationContext as DayTilesApplication).settings
+    val showLunarDates by settings.showLunarDates.collectAsStateWithLifecycle()
     LaunchedEffect(initialDate) {
         initialDate?.let {
             viewModel.selectDateAndShow(it)
@@ -92,6 +95,7 @@ fun CalendarRoute(
         onOpenMenu = onOpenMenu,
         onNavigatePrimary = onNavigatePrimary,
         onMonthSelected = viewModel::showMonth,
+        showLunarDates = showLunarDates,
     )
 }
 
@@ -110,6 +114,7 @@ fun CalendarScreen(
     onEditTask: (TaskEntity) -> Unit,
     modifier: Modifier = Modifier,
     selectedTab: CalendarTab = CalendarTab.CALENDAR,
+    showLunarDates: Boolean = true,
     onTaskCompletedChanged: (TaskEntity, Boolean) -> Unit = { _, _ -> },
     selectedTaskTag: String? = null,
     onTaskTagSelected: (String?) -> Unit = {},
@@ -194,7 +199,7 @@ fun CalendarScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             if (isCalendar) {
                 WeekdayHeader()
-                MonthGrid(uiState, onDateSelected, onOpenDay, onPreviousMonth, onNextMonth, Modifier.weight(1f))
+                MonthGrid(uiState, onDateSelected, onOpenDay, onPreviousMonth, onNextMonth, showLunarDates, Modifier.weight(1f))
             } else {
                 TaskOverview(
                     tasks = if (dayOnly) uiState.tasks.filter { it.date == uiState.selectedDate } else uiState.tasks,
@@ -346,7 +351,7 @@ private fun WeekdayHeader() {
 @Composable
 private fun MonthGrid(
     uiState: CalendarUiState, onDateSelected: (LocalDate) -> Unit, onOpenDay: (LocalDate) -> Unit,
-    onPreviousMonth: () -> Unit, onNextMonth: () -> Unit, modifier: Modifier = Modifier,
+    onPreviousMonth: () -> Unit, onNextMonth: () -> Unit, showLunarDates: Boolean, modifier: Modifier = Modifier,
 ) {
     val weeks = remember(uiState.visibleMonth) { buildDisplayMonthWeeks(uiState.visibleMonth) }
     val previous by rememberUpdatedState(onPreviousMonth)
@@ -362,7 +367,7 @@ private fun MonthGrid(
                 week.forEach { date ->
                     DayCell(
                         date, uiState.contentByDate[date], date == uiState.today, date == uiState.selectedDate,
-                        YearMonth.from(date) == uiState.visibleMonth,
+                        YearMonth.from(date) == uiState.visibleMonth, showLunarDates,
                         onClick = { if (date == uiState.selectedDate) onOpenDay(date) else onDateSelected(date) },
                         modifier = Modifier.weight(1f),
                     )
@@ -374,12 +379,12 @@ private fun MonthGrid(
 
 @Composable
 private fun DayCell(
-    date: LocalDate, content: DayContent?, isToday: Boolean, isSelected: Boolean, isInMonth: Boolean,
+    date: LocalDate, content: DayContent?, isToday: Boolean, isSelected: Boolean, isInMonth: Boolean, showLunarDates: Boolean,
     onClick: () -> Unit, modifier: Modifier = Modifier,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val description = remember(date, locale) { date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)) }
-    val lunar = remember(date) { lunarLabel(date) }
+    val lunar = remember(date, showLunarDates) { if (showLunarDates) lunarLabel(date) else null }
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxHeight().semantics { contentDescription = description },
@@ -394,7 +399,7 @@ private fun DayCell(
                         Text(date.dayOfMonth.toString(), fontSize = 15.sp,
                             color = if (isToday) MaterialTheme.colorScheme.onPrimary else if (!isInMonth) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
                     }
-                    Text(lunar, Modifier.weight(1f), fontSize = 8.sp, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (lunar != null) Text(lunar, Modifier.weight(1f), fontSize = 8.sp, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.height(3.dp))
                 content?.let { DayPreview(it, spacious) }

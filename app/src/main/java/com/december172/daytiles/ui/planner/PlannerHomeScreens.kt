@@ -1,8 +1,7 @@
 package com.december172.daytiles.ui.planner
 
-import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.widget.Toast
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +11,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,9 +33,17 @@ import com.december172.daytiles.widget.*
 private data class WidgetOption(val name: Int, val description: Int, val icon: Int, val provider: Class<*>)
 
 @Composable
-fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit) {
+fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit, pinViewModel: WidgetPinViewModel = viewModel()) {
     val context = LocalContext.current
-    val manager = AppWidgetManager.getInstance(context)
+    val pin by pinViewModel.state.collectAsStateWithLifecycle()
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
+    val listState = rememberLazyListState()
+    LaunchedEffect(pin.status, lifecycle) {
+        if (lifecycle == Lifecycle.State.RESUMED) {
+            if (pin.status != WidgetPinStatus.IDLE) listState.animateScrollToItem(1)
+            pinViewModel.offerUnconfirmedHelp()
+        }
+    }
     val options = listOf(
         WidgetOption(R.string.todo_widget_name, R.string.todo_widget_description, R.drawable.ic_fluent_clipboard_task_24_regular, TodoWidgetProvider::class.java),
         WidgetOption(R.string.month_widget_name, R.string.month_widget_description, R.drawable.ic_fluent_calendar_month_24_regular, MonthWidgetProvider::class.java),
@@ -41,10 +56,31 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit) {
         bottomBar = { PlannerBottomBar("widgets", onNavigatePrimary) },
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Text(stringResource(R.string.widgets_hint), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
+            }
+            if (pin.status != WidgetPinStatus.IDLE) {
+                item {
+                    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(pin.name), style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(when (pin.status) {
+                                WidgetPinStatus.ADDED -> R.string.widget_pin_added
+                                WidgetPinStatus.WAITING -> R.string.widget_pin_waiting
+                                WidgetPinStatus.UNCONFIRMED -> R.string.widget_pin_unconfirmed
+                                else -> R.string.widget_pin_manual_required
+                            }), style = MaterialTheme.typography.bodySmall)
+                            if (pin.status != WidgetPinStatus.ADDED) {
+                                Row {
+                                    TextButton(onClick = pinViewModel::showHelp) { Text(stringResource(R.string.widget_manual_add)) }
+                                    if (pin.status != WidgetPinStatus.WAITING) TextButton(onClick = pinViewModel::retry) { Text(stringResource(R.string.retry)) }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             items(options) { option ->
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface) {
@@ -55,10 +91,7 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit) {
                         }
                         Text(stringResource(option.description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         TextButton(onClick = {
-                            if (manager.isRequestPinAppWidgetSupported) {
-                                val result = runCatching { manager.requestPinAppWidget(ComponentName(context, option.provider), null, null) }.getOrDefault(false)
-                                if (!result) Toast.makeText(context, R.string.widget_pin_failed, Toast.LENGTH_LONG).show()
-                            } else Toast.makeText(context, R.string.widget_pin_unavailable, Toast.LENGTH_LONG).show()
+                            pinViewModel.request(ComponentName(context, option.provider), option.name)
                         }, modifier = Modifier.align(Alignment.End)) {
                             Icon(painterResource(R.drawable.ic_planner_add), null, Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
@@ -69,6 +102,19 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit) {
             }
         }
     }
+    if (pin.showHelp) {
+        AlertDialog(
+            onDismissRequest = pinViewModel::dismissHelp,
+            title = { Text(stringResource(R.string.widget_manual_add)) },
+            text = { Text(stringResource(R.string.widget_manual_steps, stringResource(R.string.app_name), stringResource(pin.name))) },
+            confirmButton = { TextButton(onClick = {
+                pinViewModel.dismissHelp()
+                context.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }) { Text(stringResource(R.string.open_home_screen)) } },
+            dismissButton = { TextButton(onClick = pinViewModel::dismissHelp) { Text(stringResource(R.string.close)) } },
+        )
+    }
+
 }
 
 private data class ToolDestination(val route: String, val name: Int, val icon: Int)
@@ -84,7 +130,6 @@ fun MoreScreen(onNavigatePrimary: (String) -> Unit, onOpen: (String) -> Unit, on
         listOf(
             ToolDestination("week", R.string.week_title, R.drawable.ic_fluent_calendar_week_start_24_regular),
             ToolDestination("courses", R.string.course_timetable_title, R.drawable.ic_fluent_calendar_agenda_24_regular),
-            ToolDestination("course_scheduler", R.string.course_scheduler_title, R.drawable.ic_fluent_book_24_regular),
         ),
         listOf(
             ToolDestination("settings", R.string.settings_title, R.drawable.ic_fluent_settings_24_regular),

@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DayTiles</string>
-    <string name="month_title">%1$s %2$d</string>
-    <string name="selected_date">Selected · %1$s</string>
     <string name="today">Today</string>
-    <string name="previous_month">Previous month</string>
-    <string name="next_month">Next month</string>
-    <string name="date_accessibility">%1$s</string>
     <string name="sticker_accessibility">Sticker %1$s</string>
     <string name="back">‹ Back</string>
     <string name="close">Close</string>
@@ -16,7 +11,6 @@
     <string name="add_task_placeholder">Add a task</string>
     <string name="add">Add</string>
     <string name="delete">Delete</string>
-    <string name="edit">Edit</string>
     <string name="edit_task">Edit task</string>
     <string name="task_title">Task title</string>
     <string name="new_task">New task</string>
@@ -24,7 +18,7 @@
     <string name="delete_task_confirmation">Delete this task? This cannot be undone.</string>
     <string name="task_details">Details</string>
     <string name="task_details_hint">Add context, steps, or anything you need to remember.</string>
-    <string name="subtasks_progress">Subtasks · %1$d of %2$d complete</string>
+    <string name="subtasks_progress">Subtasks · completed: %1$d/%2$d</string>
     <string name="add_subtask">Add a subtask</string>
     <string name="task_priority">Priority</string>
     <string name="enable_priority">Classify by importance and urgency</string>
@@ -35,7 +29,6 @@
     <string name="goals_title">Task goals</string>
     <string name="daily_goal">Daily</string>
     <string name="weekly_goal">Weekly</string>
-    <string name="goal_progress">%1$d of %2$d tasks completed</string>
     <string name="goal_target">Completion target</string>
     <string name="goal_punchcard">Goal punch card · groups reached: %1$d</string>
     <string name="quadrants_title">Priority matrix</string>
@@ -49,13 +42,10 @@
     <string name="week_title">Week view</string>
     <string name="courses_title">Course timetable</string>
     <string name="course_timetable_title">Course timetable</string>
-    <string name="course_scheduler_title">Course Scheduler</string>
-    <string name="course_scheduler_hint">Manage recurring classes here. Select a course to edit it, or remove it when it is no longer scheduled.</string>
     <string name="course_week_range">%1$s – %2$s</string>
     <string name="edit_course">Edit course</string>
     <string name="course_invalid_time">End time must be later than start time.</string>
     <string name="course_name">Course name</string>
-    <string name="weekday">Weekday</string>
     <string name="course_start">Start (HH:mm)</string>
     <string name="course_end">End (HH:mm)</string>
     <string name="course_location">Location</string>
@@ -67,7 +57,6 @@
     <string name="focus_pause">Pause</string>
     <string name="focus_resume">Resume</string>
     <string name="focus_stop">Stop</string>
-    <string name="focus_break_note">Break duration is %1$d minutes.</string>
     <string name="focus_paused">Focus timer paused</string>
     <string name="focus_work_phase">Focus</string>
     <string name="focus_break_phase">Break</string>
@@ -89,7 +78,6 @@
     <string name="no_tags">No task tags yet.</string>
     <string name="task_tags">Tags</string>
     <string name="task_tags_hint">Separate tags with commas</string>
-    <string name="all_tags">All tags</string>
     <string name="no_tasks_for_tag">No tasks match this tag.</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
@@ -97,7 +85,6 @@
     <string name="add_sticker">+ Add sticker</string>
     <string name="no_stickers">Add a sticker to make this day stand out.</string>
     <string name="choose_sticker">Choose a sticker</string>
-    <string name="tap_to_edit">Tap to edit</string>
     <string name="custom_emoji">Custom emoji</string>
     <string name="custom_emoji_placeholder">Type or paste emoji</string>
     <string name="import_sticker_image">Import PNG or WebP</string>
@@ -108,29 +95,23 @@
     <string name="remote_sticker_error">Could not download this PNG or WebP URL.</string>
     <string name="calendar_tab">Calendar</string>
     <string name="tasks_tab">Tasks</string>
-    <string name="no_tasks_this_month">No tasks this month yet.</string>
-    <string name="open_day">Open day</string>
     <string name="widget_name">DayTiles daily notes</string>
     <string name="widget_description">Read and edit the journal entry for today</string>
     <string name="widget_loading">Loading tasks…</string>
     <string name="widget_no_tasks">No open tasks yet.</string>
-    <string name="widget_add_task">+ Add</string>
     <string name="journal_widget_edit">Write a note for today</string>
     <string name="journal_widget_empty">Tap to write a note for today.</string>
-    <string name="widget_refresh">Refresh</string>
     <string name="todo_widget_name">DayTiles todo list</string>
     <string name="todo_widget_description">All open tasks with checkboxes and reminders</string>
     <string name="month_widget_name">DayTiles month</string>
     <string name="month_widget_description">A compact month calendar</string>
     <string name="task_reminders">Task reminders</string>
     <string name="task_reminder_title">Task reminder</string>
-    <string name="reminder_time">Reminder time</string>
     <string name="set_reminder">Set reminder</string>
     <string name="no_reminder">No reminder</string>
     <string name="remove_reminder">Remove</string>
     <string name="reminder_time_value">Reminder at %1$s</string>
     <string name="remove_sticker_accessibility">Remove sticker %1$s</string>
-    <string name="reminder_permission_required">Allow notifications to receive task reminders.</string>
     <string name="task_due_today">Today</string>
     <string name="task_overdue">Overdue</string>
     <string name="todo_checkbox_accessibility">Mark %1$s complete</string>
@@ -149,8 +130,6 @@
     <string name="local_notebook">A little space for every day</string>
     <string name="widgets_hint">Keep your planner close. Add a DayTiles widget to your home screen.</string>
     <string name="pin_widget">Add to home screen</string>
-    <string name="widget_pin_unavailable">To add widgets, touch and hold an empty area on your home screen.</string>
-    <string name="widget_pin_failed">Could not open the launcher widget picker. You can add it from your home screen.</string>
     <string name="all_filter">All</string>
     <string name="task_todo">To do</string>
     <string name="task_done">Completed</string>
@@ -161,4 +140,25 @@
     <string name="todo_uncheck_accessibility">Mark %1$s incomplete</string>
     <string name="no_goal">No target available</string>
     <string name="add_goal_hint">Tap + to set a task goal</string>
+    <string name="calendar_display_settings">Calendar display</string>
+    <string name="show_lunar_dates">Show Chinese lunar dates</string>
+    <string name="show_lunar_dates_hint">Show lunar dates next to Gregorian dates in the month view.</string>
+    <string name="manage_courses">Manage courses</string>
+    <string name="previous_week">Previous week</string>
+    <string name="next_week">Next week</string>
+    <string name="course_grid_hint">Tap + or an empty time slot to add a course. Tap a class to edit it.</string>
+    <string name="add_course_at">Add course on %1$s at %2$s</string>
+    <string name="no_courses">No courses yet.</string>
+    <string name="course_repeats_weekly">Repeats every week</string>
+    <string name="delete_course">Delete course</string>
+    <string name="delete_course_confirmation">Delete this course and its reminders?</string>
+    <string name="widget_pin_added">Widget added to your home screen.</string>
+    <string name="widget_pin_waiting">Confirm the widget in your launcher. If no prompt appears, use the manual steps below.</string>
+    <string name="widget_pin_unconfirmed">No confirmation received yet. You can retry or add this widget from the home screen.</string>
+    <string name="widget_pin_manual_required">This launcher could not start automatic widget placement. Add it from the home screen instead.</string>
+    <string name="widget_manual_add">Add manually</string>
+    <string name="widget_manual_steps">1. Open your home screen.\n2. Touch and hold an empty area (some launchers use a two-finger pinch).\n3. Choose Widgets, then %1$s.\n4. Drag %2$s onto the home screen.\n\nThe launcher controls widget placement; make sure there is enough space.</string>
+    <string name="open_home_screen">Open home screen</string>
+    <string name="retry">Retry</string>
+    <string name="task_unchecked_symbol" translatable="false">○</string>
 </resources>

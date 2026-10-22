@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher-hosted RemoteViews do not draw the app theme window background. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="Overdraw"
     android:id="@+id/todo_widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"

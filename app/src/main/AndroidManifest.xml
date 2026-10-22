@@ -23,6 +23,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver android:name=".widget.WidgetPinnedReceiver" android:exported="false" />
         <receiver
             android:name=".widget.DayTilesWidgetProvider"
             android:exported="true"

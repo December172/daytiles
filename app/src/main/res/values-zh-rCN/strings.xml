@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DayTiles</string>
-    <string name="month_title">%2$d年%1$s</string>
-    <string name="selected_date">已选 · %1$s</string>
     <string name="today">今天</string>
-    <string name="previous_month">上个月</string>
-    <string name="next_month">下个月</string>
-    <string name="date_accessibility">%1$s</string>
     <string name="sticker_accessibility">贴纸 %1$s</string>
     <string name="back">‹ 返回</string>
     <string name="close">关闭</string>
@@ -16,7 +11,6 @@
     <string name="add_task_placeholder">添加任务</string>
     <string name="add">添加</string>
     <string name="delete">删除</string>
-    <string name="edit">编辑</string>
     <string name="edit_task">编辑任务</string>
     <string name="task_title">任务标题</string>
     <string name="new_task">新建任务</string>
@@ -35,7 +29,6 @@
     <string name="goals_title">任务目标</string>
     <string name="daily_goal">每日</string>
     <string name="weekly_goal">每周</string>
-    <string name="goal_progress">已完成 %1$d/%2$d 个任务</string>
     <string name="goal_target">完成目标</string>
     <string name="goal_punchcard">目标打卡 · 达成组数：%1$d</string>
     <string name="quadrants_title">优先级矩阵</string>
@@ -49,13 +42,10 @@
     <string name="week_title">周视图</string>
     <string name="courses_title">课程表</string>
     <string name="course_timetable_title">课程表</string>
-    <string name="course_scheduler_title">课程管理</string>
-    <string name="course_scheduler_hint">在此管理每周重复的课程。点击课程可编辑，不再安排的课程可以删除。</string>
     <string name="course_week_range">%1$s – %2$s</string>
     <string name="edit_course">编辑课程</string>
     <string name="course_invalid_time">结束时间必须晚于开始时间。</string>
     <string name="course_name">课程名称</string>
-    <string name="weekday">星期</string>
     <string name="course_start">开始时间（HH:mm）</string>
     <string name="course_end">结束时间（HH:mm）</string>
     <string name="course_location">地点</string>
@@ -67,7 +57,6 @@
     <string name="focus_pause">暂停</string>
     <string name="focus_resume">继续</string>
     <string name="focus_stop">停止</string>
-    <string name="focus_break_note">休息时长为 %1$d 分钟。</string>
     <string name="focus_paused">专注计时已暂停</string>
     <string name="focus_work_phase">专注中</string>
     <string name="focus_break_phase">休息中</string>
@@ -89,7 +78,6 @@
     <string name="no_tags">暂无任务标签。</string>
     <string name="task_tags">标签</string>
     <string name="task_tags_hint">多个标签请用逗号分隔</string>
-    <string name="all_tags">全部标签</string>
     <string name="no_tasks_for_tag">没有符合此标签的任务。</string>
     <string name="cancel">取消</string>
     <string name="save">保存</string>
@@ -97,7 +85,6 @@
     <string name="add_sticker">+ 添加贴纸</string>
     <string name="no_stickers">添加贴纸，让这一天更醒目。</string>
     <string name="choose_sticker">选择贴纸</string>
-    <string name="tap_to_edit">点按编辑</string>
     <string name="custom_emoji">自定义 Emoji</string>
     <string name="custom_emoji_placeholder">输入或粘贴 Emoji</string>
     <string name="import_sticker_image">导入 PNG 或 WebP</string>
@@ -108,29 +95,23 @@
     <string name="remote_sticker_error">无法从该网址下载 PNG 或 WebP。</string>
     <string name="calendar_tab">日历</string>
     <string name="tasks_tab">待办</string>
-    <string name="no_tasks_this_month">本月还没有待办事项。</string>
-    <string name="open_day">打开日期</string>
     <string name="widget_name">DayTiles 每日笔记</string>
     <string name="widget_description">查看并编辑今天的日记</string>
     <string name="widget_loading">正在加载待办……</string>
     <string name="widget_no_tasks">暂无待办事项。</string>
-    <string name="widget_add_task">+ 添加</string>
     <string name="journal_widget_edit">写下今天的笔记</string>
     <string name="journal_widget_empty">点按即可记录今天。</string>
-    <string name="widget_refresh">刷新</string>
     <string name="todo_widget_name">DayTiles 待办清单</string>
     <string name="todo_widget_description">显示全部未完成事项、勾选框和提醒</string>
     <string name="month_widget_name">DayTiles 月历</string>
     <string name="month_widget_description">紧凑月历视图</string>
     <string name="task_reminders">任务提醒</string>
     <string name="task_reminder_title">待办提醒</string>
-    <string name="reminder_time">提醒时间</string>
     <string name="set_reminder">设置提醒</string>
     <string name="no_reminder">不提醒</string>
     <string name="remove_reminder">移除</string>
     <string name="reminder_time_value">提醒时间：%1$s</string>
     <string name="remove_sticker_accessibility">移除贴纸 %1$s</string>
-    <string name="reminder_permission_required">请允许通知，以接收任务提醒。</string>
     <string name="task_due_today">今天</string>
     <string name="task_overdue">已逾期</string>
     <string name="todo_checkbox_accessibility">将“%1$s”标记为已完成</string>
@@ -149,8 +130,6 @@
     <string name="local_notebook">为每一天留一点空间</string>
     <string name="widgets_hint">把规划放在手边，将 DayTiles 小组件添加到桌面。</string>
     <string name="pin_widget">添加到桌面</string>
-    <string name="widget_pin_unavailable">长按桌面空白处，在小组件列表中添加。</string>
-    <string name="widget_pin_failed">无法打开桌面添加窗口，请从桌面的小组件列表添加。</string>
     <string name="all_filter">全部</string>
     <string name="task_todo">待办</string>
     <string name="task_done">已完成</string>
@@ -161,4 +140,24 @@
     <string name="todo_uncheck_accessibility">将 %1$s 标记为未完成</string>
     <string name="no_goal">还没有目标</string>
     <string name="add_goal_hint">点击 +，设定任务完成目标</string>
+    <string name="calendar_display_settings">日历显示</string>
+    <string name="show_lunar_dates">显示中国农历</string>
+    <string name="show_lunar_dates_hint">在月视图的公历日期旁显示农历日期。</string>
+    <string name="manage_courses">管理课程</string>
+    <string name="previous_week">上一周</string>
+    <string name="next_week">下一周</string>
+    <string name="course_grid_hint">点击 + 或空白时段添加课程，点击课程即可编辑。</string>
+    <string name="add_course_at">在%1$s %2$s 添加课程</string>
+    <string name="no_courses">还没有课程。</string>
+    <string name="course_repeats_weekly">每周重复</string>
+    <string name="delete_course">删除课程</string>
+    <string name="delete_course_confirmation">删除这门课程及其提醒？</string>
+    <string name="widget_pin_added">小组件已添加到桌面。</string>
+    <string name="widget_pin_waiting">请在桌面启动器中确认添加。如果没有弹窗，可使用下方的手动添加步骤。</string>
+    <string name="widget_pin_unconfirmed">尚未收到添加确认。你可以重试，或从桌面手动添加这个小组件。</string>
+    <string name="widget_pin_manual_required">当前桌面未能启动自动添加，请从桌面的小组件列表添加。</string>
+    <string name="widget_manual_add">手动添加</string>
+    <string name="widget_manual_steps">1. 返回桌面。\n2. 长按空白处（部分桌面需双指捏合）。\n3. 打开“小组件”，找到 %1$s。\n4. 将“%2$s”拖到桌面。\n\n小组件由桌面启动器放置，请确保有足够空间。</string>
+    <string name="open_home_screen">返回桌面</string>
+    <string name="retry">重试</string>
 </resources>
