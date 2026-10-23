@@ -1,5 +1,7 @@
 # DayTiles
 
+[English](README.md) | [简体中文](README.zh_CN.md)
+
 DayTiles is a free, open-source, offline-first Android calendar, journal, and visual planner. The month calendar is the home for dated notes, stickers, and checkable tasks. The app is built with Kotlin, Jetpack Compose, Room, and Material 3.
 
 ## Screenshots
