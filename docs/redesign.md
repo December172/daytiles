@@ -128,3 +128,35 @@ and course creation/editing/deletion without a reminder. The crash buffer stayed
 empty. Temporary database records were removed after the run, and the emulator's
 app language and focus preferences were restored. The Android 8–11 compatibility
 branch was checked by compilation and Lint; runtime checks used API 37.
+
+## Traditional Chinese localization
+
+Hong Kong (`zh-HK`) and Taiwan (`zh-TW`) now use shared Traditional Chinese
+resources, with regional wording for course and priority labels. The script
+fallback also handles explicit `zh-Hant` locales. These locales previously lacked
+matching app resources and displayed English instead.
+
+Focus durations use localized minute units. Lunar month names and the leap-month
+prefix come from resources, including Traditional Chinese `臘` and `閏`, and the
+calendar refreshes those labels when its locale changes.
+
+Verification used only the API 37 emulator:
+
+- `assembleDebug`, all 13 JVM unit tests, and `lintDebug` passed with zero Lint issues.
+- An on-device instrumentation check passed 841 assertions across `zh-HK`,
+  `zh-TW`, `zh-Hant`, `zh-Hant-HK`, `zh-Hant-TW`, `zh-CN`, and `en-US`, covering
+  translated strings, regional overrides, arrays, quantity resources, and units.
+- Both regional interfaces were checked for navigation, quick task entry, goals,
+  widgets, calendar settings, and course editing. Course creation, location
+  editing, and deletion without reminders passed in both languages.
+- Lunar display was toggled off, checked after a process restart, and restored.
+  January 2027 and July 2025 views displayed `臘月` and leap-month labels correctly.
+- Focus start, pause, resume, and stop passed in both languages. English calendar,
+  settings, and focus screens and Simplified Chinese minute units were also checked.
+- All seven entity tables matched their sample-data snapshot after the checks.
+  SQLite integrity was valid, and the app had no entries in the crash buffer.
+
+Each regional README includes ten screenshots captured and cropped inside the
+emulator before export. Pixel comparisons confirmed that the 1080 × 2274 PNGs
+only remove the system bars. The Simplified Chinese focus screenshot was also
+updated to show its localized minute units.

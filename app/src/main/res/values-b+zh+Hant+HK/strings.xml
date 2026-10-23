@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_details_hint">補充背景、步驟或需要記住的資料。</string>
+    <string name="task_priority">優先次序</string>
+    <string name="quadrants_title">優先次序矩陣</string>
+    <string name="quadrants_hint">在任務編輯頁標記重要性與緊急程度。未設定優先次序的任務不會歸入象限。</string>
+    <string name="help_body">透過側邊選單開啟任務目標、優先次序矩陣、週檢視、課程表及專注時鐘。</string>
+</resources>

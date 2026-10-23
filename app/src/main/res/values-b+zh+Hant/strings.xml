@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DayTiles</string>
+    <string name="today">今天</string>
+    <string name="sticker_accessibility">貼紙 %1$s</string>
+    <string name="back">‹ 返回</string>
+    <string name="close">關閉</string>
+    <string name="journal_heading">今日日記</string>
+    <string name="journal_placeholder">寫下今天發生的事……</string>
+    <string name="tasks_heading">任務</string>
+    <string name="add_task_placeholder">新增任務</string>
+    <string name="add">新增</string>
+    <string name="delete">刪除</string>
+    <string name="edit_task">編輯任務</string>
+    <string name="task_title">任務標題</string>
+    <string name="new_task">新增任務</string>
+    <string name="delete_task">刪除任務</string>
+    <string name="delete_task_confirmation">確定刪除此任務嗎？此操作無法復原。</string>
+    <string name="task_details">任務詳情</string>
+    <string name="task_details_hint">補充背景、步驟或需要記住的資訊。</string>
+    <string name="subtasks_progress">子任務 · 已完成 %1$d/%2$d</string>
+    <string name="add_subtask">新增子任務</string>
+    <string name="task_priority">優先順序</string>
+    <string name="enable_priority">按重要性和緊急程度分類</string>
+    <string name="important">重要</string>
+    <string name="not_important">不重要</string>
+    <string name="urgent">緊急</string>
+    <string name="not_urgent">不緊急</string>
+    <string name="goals_title">任務目標</string>
+    <string name="daily_goal">每日</string>
+    <string name="weekly_goal">每週</string>
+    <string name="goal_target">完成目標</string>
+    <string name="goal_punchcard">目標打卡 · 達成組數：%1$d</string>
+    <string name="quadrants_title">優先順序矩陣</string>
+    <string name="quadrants_hint">在任務編輯頁標記重要性與緊急程度。未設定優先順序的任務不會歸入象限。</string>
+    <string name="quadrant_do">優先處理 · 重要且緊急</string>
+    <string name="quadrant_schedule">安排計劃 · 重要但不緊急</string>
+    <string name="quadrant_delegate">委派處理 · 緊急但不重要</string>
+    <string name="quadrant_eliminate">稍後處理 · 均不緊急</string>
+    <string name="move_next_quadrant">移動</string>
+    <string name="no_tasks">暫無任務</string>
+    <string name="week_title">週檢視</string>
+    <string name="courses_title">課程表</string>
+    <string name="course_timetable_title">課程表</string>
+    <string name="course_week_range">%1$s – %2$s</string>
+    <string name="edit_course">編輯課程</string>
+    <string name="course_invalid_time">結束時間必須晚於開始時間。</string>
+    <string name="course_name">課程名稱</string>
+    <string name="course_start">開始時間（HH:mm）</string>
+    <string name="course_end">結束時間（HH:mm）</string>
+    <string name="course_location">地點</string>
+    <string name="add_course">新增課程</string>
+    <string name="focus_title">專注時鐘</string>
+    <string name="focus_work">專注時長</string>
+    <string name="focus_break">休息時長</string>
+    <string name="focus_start">開始</string>
+    <string name="focus_pause">暫停</string>
+    <string name="focus_resume">繼續</string>
+    <string name="focus_stop">停止</string>
+    <string name="focus_paused">專注計時已暫停</string>
+    <string name="focus_work_phase">專注中</string>
+    <string name="focus_break_phase">休息中</string>
+    <string name="focus_link_task">關聯任務（可選）</string>
+    <string name="focus_linked_task">專注：%1$s</string>
+    <string name="none">無</string>
+    <string name="course_reminder_minutes">上課前提醒（分鐘）</string>
+    <string name="course_reminder_title">課程即將開始</string>
+    <string name="week_widget_name">DayTiles 週檢視</string>
+    <string name="week_widget_description">檢視本週任務和日記摘要</string>
+    <string name="focus_widget_name">DayTiles 專注時鐘</string>
+    <string name="focus_widget_description">開始或檢視專注計時</string>
+    <string name="settings_title">設定</string>
+    <string name="settings_body">DayTiles 將規劃資料儲存在本機，應用程式語言跟隨系統語言。</string>
+    <string name="help_title">使用說明</string>
+    <string name="help_body">透過側邊選單開啟任務目標、優先順序矩陣、週檢視、課程表和專注時鐘。</string>
+    <string name="open_navigation_menu">開啟導覽選單</string>
+    <string name="tags_title">任務標籤</string>
+    <string name="no_tags">暫無任務標籤。</string>
+    <string name="task_tags">標籤</string>
+    <string name="task_tags_hint">多個標籤請用逗號分隔</string>
+    <string name="no_tasks_for_tag">沒有符合此標籤的任務。</string>
+    <string name="cancel">取消</string>
+    <string name="save">儲存</string>
+    <string name="stickers_heading">貼紙</string>
+    <string name="add_sticker">+ 新增貼紙</string>
+    <string name="no_stickers">新增貼紙，讓這一天更醒目。</string>
+    <string name="choose_sticker">選擇貼紙</string>
+    <string name="custom_emoji">自訂 Emoji</string>
+    <string name="custom_emoji_placeholder">輸入或貼上 Emoji</string>
+    <string name="import_sticker_image">匯入 PNG 或 WebP</string>
+    <string name="imported_stickers">已匯入貼紙</string>
+    <string name="remote_sticker_url">貼紙網址</string>
+    <string name="remote_sticker_url_placeholder">貼上 PNG 或 WebP 的 HTTPS 直接連結</string>
+    <string name="download_remote_sticker">從網址下載</string>
+    <string name="remote_sticker_error">無法從該網址下載 PNG 或 WebP。</string>
+    <string name="calendar_tab">日曆</string>
+    <string name="tasks_tab">待辦</string>
+    <string name="widget_name">DayTiles 每日筆記</string>
+    <string name="widget_description">檢視並編輯今天的日記</string>
+    <string name="widget_loading">正在載入待辦……</string>
+    <string name="widget_no_tasks">暫無待辦事項。</string>
+    <string name="journal_widget_edit">寫下今天的筆記</string>
+    <string name="journal_widget_empty">點一下即可記錄今天。</string>
+    <string name="todo_widget_name">DayTiles 待辦清單</string>
+    <string name="todo_widget_description">顯示全部未完成事項、勾選框和提醒</string>
+    <string name="month_widget_name">DayTiles 月曆</string>
+    <string name="month_widget_description">緊湊月曆檢視</string>
+    <string name="task_reminders">任務提醒</string>
+    <string name="task_reminder_title">待辦提醒</string>
+    <string name="set_reminder">設定提醒</string>
+    <string name="no_reminder">不提醒</string>
+    <string name="remove_reminder">移除</string>
+    <string name="reminder_time_value">提醒時間：%1$s</string>
+    <string name="remove_sticker_accessibility">移除貼紙 %1$s</string>
+    <string name="task_due_today">今天</string>
+    <string name="task_overdue">已逾期</string>
+    <string name="todo_checkbox_accessibility">將「%1$s」標記為已完成</string>
+    <string-array name="widget_weekdays">
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+        <item>日</item>
+    </string-array>
+    <string name="schedule_tab">日程</string>
+    <string name="view_tab">檢視</string>
+    <string name="target_tab">目標</string>
+    <string name="widgets_tab">小工具</string>
+    <string name="me_tab">我的</string>
+    <string name="choose_month">選擇月份</string>
+    <string name="previous_year">上一年</string>
+    <string name="next_year">下一年</string>
+    <string name="planner_tools">規劃工具</string>
+    <string name="local_notebook">為每一天留一點空間</string>
+    <string name="widgets_hint">讓規劃隨手可得。將 DayTiles 小工具新增至主畫面。</string>
+    <string name="pin_widget">新增至主畫面</string>
+    <string name="all_filter">全部</string>
+    <string name="task_todo">待辦</string>
+    <string name="task_done">已完成</string>
+    <string name="empty_schedule_title">從一件小事開始</string>
+    <string name="empty_schedule_hint">點選 +，記下今天的規劃。</string>
+    <string name="month_tasks">本月日程</string>
+    <string name="choose_date">選擇日期</string>
+    <string name="todo_uncheck_accessibility">將 %1$s 標記為未完成</string>
+    <string name="no_goal">還沒有目標</string>
+    <string name="add_goal_hint">點選 +，設定任務完成目標</string>
+    <string name="calendar_display_settings">日曆顯示</string>
+    <string name="show_lunar_dates">顯示中國農曆</string>
+    <string name="show_lunar_dates_hint">在月檢視的公曆日期旁顯示農曆日期。</string>
+    <string name="manage_courses">管理課程</string>
+    <string name="previous_week">上一週</string>
+    <string name="next_week">下一週</string>
+    <string name="course_grid_hint">點選 + 或空白時段新增課程，點選課程即可編輯。</string>
+    <string name="add_course_at">在%1$s %2$s 新增課程</string>
+    <string name="no_courses">還沒有課程。</string>
+    <string name="course_repeats_weekly">每週重複</string>
+    <string name="delete_course">刪除課程</string>
+    <string name="delete_course_confirmation">刪除這門課程及其提醒？</string>
+    <string name="widget_pin_added">小工具已新增至主畫面。</string>
+    <string name="widget_pin_waiting">請在主畫面啟動器中確認新增。如果沒有出現提示，可使用下方的手動新增步驟。</string>
+    <string name="widget_pin_unconfirmed">尚未收到新增確認。你可以重試，或從主畫面手動新增這個小工具。</string>
+    <string name="widget_pin_manual_required">目前的啟動器無法自動新增，請從主畫面的小工具清單新增。</string>
+    <string name="widget_manual_add">手動新增</string>
+    <string name="widget_manual_steps">1. 返回主畫面。\n2. 長按空白處（部分啟動器需以雙指捏合）。\n3. 開啟「小工具」，找到 %1$s。\n4. 將「%2$s」拖曳至主畫面。\n\n小工具由啟動器放置，請確保有足夠空間。</string>
+    <string name="open_home_screen">返回主畫面</string>
+    <string name="retry">重試</string>
+    <string name="focus_duration_minutes">%1$d 分鐘</string>
+    <string name="lunar_leap_prefix">閏</string>
+    <string-array name="lunar_month_names">
+        <item>正</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+        <item>七</item>
+        <item>八</item>
+        <item>九</item>
+        <item>十</item>
+        <item>冬</item>
+        <item>臘</item>
+    </string-array>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="goal_progress">
+        <item quantity="other">已完成 %1$d/%2$d 個任務</item>
+    </plurals>
+    <plurals name="focus_break_note">
+        <item quantity="other">休息時長為 %1$d 分鐘。</item>
+    </plurals>
+</resources>

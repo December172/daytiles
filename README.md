@@ -1,6 +1,6 @@
 # DayTiles
 
-[English](README.md) | [简体中文](README.zh_CN.md)
+[English](README.md) | [简体中文](README.zh_CN.md) | [繁體中文（香港）](README.zh_HK.md) | [繁體中文（台灣）](README.zh_TW.md)
 
 DayTiles is a free, open-source, offline-first Android calendar, journal, and visual planner. The month calendar is the home for dated notes, stickers, and checkable tasks. The app is built with Kotlin, Jetpack Compose, Room, and Material 3.
 
@@ -55,7 +55,7 @@ verification, and remaining visual differences.
   - Compact localized month calendar with today's date highlighted
   - Week overview with dated tasks and journal previews
   - Focus clock for starting/checking a focus session
-- English as the default language and Simplified Chinese (`zh-CN`) localization
+- English as the default language, with Simplified Chinese (`zh-CN`) and Traditional Chinese for Hong Kong (`zh-HK`) and Taiwan (`zh-TW`)
 - Offline-first storage, with no account, ads, analytics, tracking, cloud sync, or backend
 
 ## Features in detail

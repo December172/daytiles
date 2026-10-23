@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="courses_title">課表</string>
+    <string name="course_timetable_title">課表</string>
+    <string name="help_body">透過側邊選單開啟任務目標、優先順序矩陣、週檢視、課表和專注時鐘。</string>
+</resources>

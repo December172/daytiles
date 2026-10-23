@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -384,7 +385,11 @@ private fun DayCell(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val description = remember(date, locale) { date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)) }
-    val lunar = remember(date, showLunarDates) { if (showLunarDates) lunarLabel(date) else null }
+    val lunarMonths = stringArrayResource(R.array.lunar_month_names)
+    val lunarLeapPrefix = stringResource(R.string.lunar_leap_prefix)
+    val lunar = remember(date, showLunarDates, locale) {
+        if (showLunarDates) lunarLabel(date, lunarMonths, lunarLeapPrefix) else null
+    }
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxHeight().semantics { contentDescription = description },
@@ -440,11 +445,11 @@ private fun DayPreview(content: DayContent, spacious: Boolean) {
 }
 
 /** Android's bundled ICU provides offline lunar dates; no calendar service is used. */
-private fun lunarLabel(date: LocalDate): String {
+private fun lunarLabel(date: LocalDate, months: Array<String>, leapPrefix: String): String {
     val calendar = ChineseCalendar().apply { timeInMillis = date.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
     val day = calendar.get(ChineseCalendar.DAY_OF_MONTH)
-    if (day == 1) return (if (calendar.get(ChineseCalendar.IS_LEAP_MONTH) == 1) "闰" else "") +
-        listOf("正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊")[calendar.get(ChineseCalendar.MONTH)] + "月"
+    if (day == 1) return (if (calendar.get(ChineseCalendar.IS_LEAP_MONTH) == 1) leapPrefix else "") +
+        months[calendar.get(ChineseCalendar.MONTH)] + "月"
     return when (day) {
         10 -> "初十"
         20 -> "二十"

@@ -311,13 +311,13 @@ private fun FocusScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.focus_work))
             IconButton(onClick = { workMinutes = (workMinutes - 5).coerceAtLeast(5) }) { Text("−") }
-            Text("$workMinutes min")
+            Text(stringResource(R.string.focus_duration_minutes, workMinutes))
             IconButton(onClick = { workMinutes = (workMinutes + 5).coerceAtMost(120) }) { Text("+") }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.focus_break))
             IconButton(onClick = { breakMinutes = (breakMinutes - 1).coerceAtLeast(1) }) { Text("−") }
-            Text("$breakMinutes min")
+            Text(stringResource(R.string.focus_duration_minutes, breakMinutes))
             IconButton(onClick = { breakMinutes = (breakMinutes + 1).coerceAtMost(60) }) { Text("+") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

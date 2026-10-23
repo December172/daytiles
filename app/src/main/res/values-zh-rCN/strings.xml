@@ -160,4 +160,10 @@
     <string name="widget_manual_steps">1. 返回桌面。\n2. 长按空白处（部分桌面需双指捏合）。\n3. 打开“小组件”，找到 %1$s。\n4. 将“%2$s”拖到桌面。\n\n小组件由桌面启动器放置，请确保有足够空间。</string>
     <string name="open_home_screen">返回桌面</string>
     <string name="retry">重试</string>
+    <string name="focus_duration_minutes">%1$d 分钟</string>
+    <string name="lunar_leap_prefix">闰</string>
+    <string-array name="lunar_month_names">
+        <item>正</item><item>二</item><item>三</item><item>四</item><item>五</item><item>六</item>
+        <item>七</item><item>八</item><item>九</item><item>十</item><item>冬</item><item>腊</item>
+    </string-array>
 </resources>
