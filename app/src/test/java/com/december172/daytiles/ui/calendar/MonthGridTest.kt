@@ -8,7 +8,7 @@ import org.junit.Test
 
 class MonthGridTest {
     @Test
-    fun `four-week month has four complete rows`() {
+    fun fourWeekMonthHasFourCompleteRows() {
         val weeks = buildMonthWeeks(YearMonth.of(2021, 2))
 
         assertEquals(4, weeks.size)
@@ -18,7 +18,7 @@ class MonthGridTest {
     }
 
     @Test
-    fun `six-week month keeps leading and trailing cells empty`() {
+    fun sixWeekMonthKeepsLeadingAndTrailingCellsEmpty() {
         val weeks = buildMonthWeeks(YearMonth.of(2021, 8))
 
         assertEquals(6, weeks.size)
@@ -29,7 +29,7 @@ class MonthGridTest {
     }
 
     @Test
-    fun `custom week start changes leading cells`() {
+    fun customWeekStartChangesLeadingCells() {
         val weeks = buildMonthWeeks(
             month = YearMonth.of(2026, 10),
             firstDayOfWeek = DayOfWeek.SUNDAY,
@@ -39,7 +39,7 @@ class MonthGridTest {
     }
 
     @Test
-    fun `display month fills adjacent days across a year boundary`() {
+    fun displayMonthFillsAdjacentDaysAcrossAYearBoundary() {
         val weeks = buildDisplayMonthWeeks(YearMonth.of(2027, 1))
         assertEquals(java.time.LocalDate.of(2026, 12, 27), weeks.first().first())
         assertEquals(java.time.LocalDate.of(2027, 2, 6), weeks.last().last())
@@ -48,7 +48,7 @@ class MonthGridTest {
     }
 
     @Test
-    fun `display month stays continuous for leap day and all week starts`() {
+    fun displayMonthStaysContinuousForLeapDayAndAllWeekStarts() {
         for (firstDay in DayOfWeek.entries) {
             val dates = buildDisplayMonthWeeks(YearMonth.of(2024, 2), firstDay).flatten()
             assertEquals(firstDay, dates.first().dayOfWeek)
@@ -59,7 +59,7 @@ class MonthGridTest {
     }
 
     @Test
-    fun `Sunday aligned four week display does not add an empty row`() {
+    fun sundayAlignedFourWeekDisplayDoesNotAddAnEmptyRow() {
         val weeks = buildDisplayMonthWeeks(YearMonth.of(2026, 2))
         assertEquals(4, weeks.size)
         assertEquals(java.time.LocalDate.of(2026, 2, 1), weeks.first().first())

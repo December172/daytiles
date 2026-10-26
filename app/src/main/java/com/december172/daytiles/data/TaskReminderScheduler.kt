@@ -10,6 +10,7 @@ import com.december172.daytiles.widget.TaskReminderReceiver
 object TaskReminderScheduler {
     fun schedule(context: Context, task: TaskEntity) {
         val reminderAt = task.reminderAt ?: return
+        if (task.deletedAt != null || task.isCompleted || reminderAt <= System.currentTimeMillis()) return
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val alarm = pendingIntent(context, task.id, task.title)
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderAt, alarm)

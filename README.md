@@ -58,7 +58,24 @@ verification, and remaining visual differences.
 - English as the default language, with Simplified Chinese (`zh-CN`) and Traditional Chinese for Hong Kong (`zh-HK`) and Taiwan (`zh-TW`)
 - Offline-first storage, with no account, ads, analytics, tracking, cloud sync, or backend
 
+- Full schedule timeline with past and future tasks across all months, completion filters, editing, and a Today shortcut
+- Recycle Bin for deleted tasks, preserving details and subtasks; restore to the original date or confirm permanent removal
+- Daily expense records with categories and notes, editable dates and amounts, daily/monthly totals and budgets, and remaining/over-budget indicators
+- Exact money storage in integer minor units; separate CNY, HKD, TWD, and USD ledgers without exchange-rate conversion
+
 ## Features in detail
+
+### Full schedule and Recycle Bin
+
+Open **Full schedule** from the drawer or Me to see every active task on a date-ordered timeline, including completed tasks and dates outside the current month. Use the completion filters, tap a task to edit it, or use Today to jump forward to the current date.
+
+Deleting a task moves it to **Recycle Bin** and cancels its pending reminder. Its details, tags, completion state, original date, and subtasks are retained. Restore returns it to its original date and reschedules an unfinished task's reminder only when that reminder is still in the future. Permanent deletion and Empty bin require confirmation and also remove the affected subtasks.
+
+### Expenses and budgets
+
+Open **Expenses & budgets** from the drawer or Me. Record a description, date, amount, category, and optional note. Tap a record to edit or delete it. Daily and Monthly modes show the corresponding expense records and totals; date controls let you review other periods.
+
+Set independent daily and monthly budgets, including a zero-spending budget. The summary shows the amount spent, the budget, and the remaining amount or overrun. Removing a budget keeps its expense records. Currency selection keeps CNY, HKD, TWD, and USD records and budgets separate; changing currency does not convert or relabel existing amounts.
 
 ### Task organization
 
@@ -89,15 +106,17 @@ Requirements:
 - Android SDK Build Tools 36.0.0
 - The checked-in Gradle Wrapper (no system Gradle installation required)
 
-Run the verification tasks from the project root:
+Start a disposable Android API 37 emulator (connected tests install and remove debug apps), then run the verification tasks from the project root. The connected suite includes the existing pure unit tests as well as database migration, repository, localization, and UI tests:
 
 ```shell
 ./gradlew assembleDebug
-./gradlew testDebugUnitTest
+ANDROID_SERIAL=emulator-5554 ./gradlew connectedDebugAndroidTest --no-configuration-cache
 ./gradlew lintDebug
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Dependency versions are centralized in `gradle/libs.versions.toml`.
+
+See [planner features and emulator verification](docs/planner-finance.md) for the migration and test coverage.
 
 ## Project structure
 

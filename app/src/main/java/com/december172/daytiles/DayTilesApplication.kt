@@ -9,13 +9,6 @@ class DayTilesApplication : Application() {
     val settings: PlannerSettings by lazy { PlannerSettings(this) }
     val repository: DayRepository by lazy {
         val database = DayTilesDatabase.getInstance(this)
-        DayRepository(
-            database.journalDao(),
-            database.taskDao(),
-            database.subtaskDao(),
-            database.planningDao(),
-            database.stickerPlacementDao(),
-            applicationContext,
-        )
+        DayRepository(database, applicationContext)
     }
 }

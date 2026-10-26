@@ -15,7 +15,7 @@
     <string name="task_title">任务标题</string>
     <string name="new_task">新建任务</string>
     <string name="delete_task">删除任务</string>
-    <string name="delete_task_confirmation">确定删除此任务吗？此操作无法撤销。</string>
+    <string name="delete_task_confirmation">将任务移至回收站？你可以稍后恢复。</string>
     <string name="task_details">任务详情</string>
     <string name="task_details_hint">补充背景、步骤或需要记住的信息。</string>
     <string name="subtasks_progress">子任务 · 已完成 %1$d/%2$d</string>

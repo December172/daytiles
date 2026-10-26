@@ -8,14 +8,14 @@ class DateConvertersTest {
     private val converters = DateConverters()
 
     @Test
-    fun `local date round trips through ISO storage`() {
+    fun localDateRoundTripsThroughISOStorage() {
         val date = LocalDate.of(2026, 10, 10)
 
         assertEquals(date, converters.toLocalDate(converters.fromLocalDate(date)))
     }
 
     @Test
-    fun `stored dates retain chronological text ordering`() {
+    fun storedDatesRetainChronologicalTextOrdering() {
         val earlier = converters.fromLocalDate(LocalDate.of(2026, 2, 28))
         val later = converters.fromLocalDate(LocalDate.of(2026, 10, 1))
 

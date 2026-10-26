@@ -17,8 +17,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SubtaskEntity::class,
         TaskGoalEntity::class,
         CourseEntity::class,
+        ExpenseEntity::class,
+        BudgetEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @TypeConverters(DateConverters::class)
@@ -28,6 +30,7 @@ abstract class DayTilesDatabase : RoomDatabase() {
     abstract fun subtaskDao(): SubtaskDao
     abstract fun planningDao(): PlanningDao
     abstract fun stickerPlacementDao(): StickerPlacementDao
+    abstract fun financeDao(): FinanceDao
 
     companion object {
         @Volatile
@@ -47,8 +50,19 @@ abstract class DayTilesDatabase : RoomDatabase() {
                     MIGRATION_5_6,
                     MIGRATION_6_7,
                     MIGRATION_7_8,
+                    MIGRATION_8_9,
                 ).build().also { instance = it }
             }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `tasks` ADD COLUMN `deletedAt` INTEGER")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_deletedAt` ON `tasks` (`deletedAt`)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `expenses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, `title` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `category` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_expenses_date_currency` ON `expenses` (`date`, `currency`)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `budgets` (`periodStart` TEXT NOT NULL, `periodType` TEXT NOT NULL, `currency` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`periodStart`, `periodType`, `currency`))")
+            }
+        }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

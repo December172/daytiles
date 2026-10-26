@@ -1,5 +1,10 @@
 package com.december172.daytiles.data
 
+import androidx.room.withTransaction
+import com.december172.daytiles.data.local.DayTilesDatabase
+import com.december172.daytiles.data.local.ExpenseEntity
+import com.december172.daytiles.data.local.BudgetEntity
+import com.december172.daytiles.domain.model.Money
 import android.content.Context
 import android.net.Uri
 import com.december172.daytiles.data.local.JournalDao
@@ -33,13 +38,87 @@ import com.december172.daytiles.data.CourseReminderScheduler
 import com.december172.daytiles.widget.WeekWidgetProvider
 
 class DayRepository(
-    private val journalDao: JournalDao,
-    private val taskDao: TaskDao,
-    private val subtaskDao: SubtaskDao,
-    private val planningDao: PlanningDao,
-    private val stickerPlacementDao: StickerPlacementDao,
+    private val database: DayTilesDatabase,
     private val appContext: Context? = null,
 ) {
+    private val journalDao = database.journalDao()
+    private val taskDao = database.taskDao()
+    private val subtaskDao = database.subtaskDao()
+    private val planningDao = database.planningDao()
+    private val stickerPlacementDao = database.stickerPlacementDao()
+    private val financeDao = database.financeDao()
+
+    fun observeAllTasks() = taskDao.observeAll()
+    fun observeDeletedTasks() = taskDao.observeDeleted()
+
+    suspend fun restoreTask(id: Long) {
+        val restored = database.withTransaction {
+            val task = taskDao.findDeletedById(id) ?: return@withTransaction null
+            taskDao.restore(id, System.currentTimeMillis())
+            task.copy(deletedAt = null)
+        } ?: return
+        if (!restored.isCompleted && (restored.reminderAt ?: 0) > System.currentTimeMillis()) {
+            appContext?.let { TaskReminderScheduler.schedule(it, restored) }
+        }
+        refreshWidgets()
+    }
+
+    suspend fun permanentlyDeleteTask(id: Long) {
+        database.withTransaction {
+            if (taskDao.findDeletedById(id) != null) {
+                subtaskDao.deleteForTask(id)
+                taskDao.deleteById(id)
+            }
+        }
+        refreshWidgets()
+    }
+
+    suspend fun emptyRecycleBin() {
+        database.withTransaction {
+            subtaskDao.deleteForBinnedTasks()
+            taskDao.emptyBin()
+        }
+        refreshWidgets()
+    }
+
+    fun observeExpenses(month: YearMonth, currency: String) =
+        financeDao.observeExpenses(month.atDay(1), month.atEndOfMonth(), currency)
+
+    fun observeBudgets(month: YearMonth, currency: String) =
+        financeDao.observeBudgets(month.atDay(1), month.atEndOfMonth(), currency)
+
+    suspend fun saveExpense(
+        id: Long?, date: LocalDate, title: String, amountMinor: Long,
+        currency: String, category: String, note: String,
+    ): Long {
+        require(title.isNotBlank())
+        require(currency in Money.currencies && amountMinor in 1..Money.MAX_AMOUNT_MINOR)
+        return database.withTransaction {
+            val existing = id?.let { requireNotNull(financeDao.findExpense(it)) }
+            val now = System.currentTimeMillis()
+            val expense = ExpenseEntity(
+                id = existing?.id ?: 0, date = date, title = title.trim(), amountMinor = amountMinor,
+                currency = currency, category = category, note = note.trim(),
+                createdAt = existing?.createdAt ?: now, updatedAt = now,
+            )
+            if (existing == null) financeDao.insertExpense(expense)
+            else { financeDao.updateExpense(expense); existing.id }
+        }
+    }
+
+    suspend fun deleteExpense(id: Long) = financeDao.deleteExpense(id)
+
+    suspend fun saveBudget(date: LocalDate, monthly: Boolean, currency: String, amountMinor: Long?) {
+        require(currency in Money.currencies)
+        val start = if (monthly) date.withDayOfMonth(1) else date
+        val type = if (monthly) "MONTH" else "DAY"
+        if (amountMinor == null) financeDao.deleteBudget(start, type, currency)
+        else {
+            require(amountMinor in 0..Money.MAX_AMOUNT_MINOR)
+            financeDao.saveBudget(BudgetEntity(start, type, currency, amountMinor, System.currentTimeMillis()))
+        }
+    }
+
     fun observeJournals(month: YearMonth): Flow<List<JournalEntryEntity>> =
         journalDao.observeBetween(month.atDay(1), month.atEndOfMonth())
 
@@ -68,7 +147,12 @@ class DayRepository(
 
     suspend fun setTaskReminder(task: TaskEntity, reminderAt: Long?) {
         val updated = task.copy(reminderAt = reminderAt, updatedAt = System.currentTimeMillis())
-        taskDao.update(updated)
+        val saved = database.withTransaction {
+            val current = taskDao.findById(task.id) ?: return@withTransaction false
+            taskDao.update(updated.copy(deletedAt = current.deletedAt))
+            true
+        }
+        if (!saved) return
         appContext?.let {
             if (reminderAt == null) TaskReminderScheduler.cancel(it, task.id)
             else TaskReminderScheduler.schedule(it, updated)
@@ -89,26 +173,33 @@ class DayRepository(
     suspend fun subtasksForTask(taskId: Long): List<SubtaskEntity> = subtaskDao.forTask(taskId)
 
     suspend fun saveSubtasks(taskId: Long, titles: List<String>) {
-        val now = System.currentTimeMillis()
-        val existing = subtaskDao.forTask(taskId).groupBy { it.title }.mapValues { it.value.toMutableList() }
-        subtaskDao.deleteForTask(taskId)
-        titles.map(String::trim).filter(String::isNotEmpty).forEachIndexed { index, title ->
-            val previous = existing[title]?.removeFirstOrNull()
-            subtaskDao.insert(
-                SubtaskEntity(
-                    parentTaskId = taskId,
-                    title = title,
-                    isCompleted = previous?.isCompleted ?: false,
-                    sortOrder = index,
-                    createdAt = previous?.createdAt ?: now,
-                    updatedAt = now,
-                ),
-            )
+        database.withTransaction {
+            if (taskDao.findById(taskId) == null) return@withTransaction
+            val now = System.currentTimeMillis()
+            val existing = subtaskDao.forTask(taskId).groupBy { it.title }.mapValues { it.value.toMutableList() }
+            subtaskDao.deleteForTask(taskId)
+            titles.map(String::trim).filter(String::isNotEmpty).forEachIndexed { index, title ->
+                val previous = existing[title]?.removeFirstOrNull()
+                subtaskDao.insert(
+                    SubtaskEntity(
+                        parentTaskId = taskId,
+                        title = title,
+                        isCompleted = previous?.isCompleted ?: false,
+                        sortOrder = index,
+                        createdAt = previous?.createdAt ?: now,
+                        updatedAt = now,
+                    ),
+                )
+            }
         }
     }
 
     suspend fun setSubtaskCompleted(subtask: SubtaskEntity, completed: Boolean) {
-        subtaskDao.update(subtask.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
+        database.withTransaction {
+            if (taskDao.findById(subtask.parentTaskId) != null) {
+                subtaskDao.update(subtask.copy(isCompleted = completed, updatedAt = System.currentTimeMillis()))
+            }
+        }
     }
 
     suspend fun goal(periodType: String, periodStart: LocalDate): TaskGoalEntity? =
@@ -210,8 +301,7 @@ class DayRepository(
     }
 
     suspend fun setTaskCompleted(task: TaskEntity, completed: Boolean) {
-        val updated = task.copy(isCompleted = completed, updatedAt = System.currentTimeMillis())
-        taskDao.update(updated)
+        if (taskDao.setCompleted(task.id, completed, System.currentTimeMillis()) == 0) return
         appContext?.let {
             if (completed) TaskReminderScheduler.cancel(it, task.id)
             else if (task.reminderAt != null) TaskReminderScheduler.schedule(it, task)
@@ -242,7 +332,12 @@ class DayRepository(
             prioritySet = prioritySet,
             updatedAt = System.currentTimeMillis(),
         )
-        taskDao.update(updated)
+        val saved = database.withTransaction {
+            val current = taskDao.findById(task.id) ?: return@withTransaction false
+            taskDao.update(updated.copy(deletedAt = current.deletedAt))
+            true
+        }
+        if (!saved) return
         appContext?.let {
             if (reminderAt == null) TaskReminderScheduler.cancel(it, task.id)
             else TaskReminderScheduler.schedule(it, updated)
@@ -251,8 +346,7 @@ class DayRepository(
     }
 
     suspend fun deleteTask(id: Long) {
-        taskDao.deleteById(id)
-        subtaskDao.deleteForTask(id)
+        if (taskDao.moveToBin(id, System.currentTimeMillis()) == 0) return
         appContext?.let { TaskReminderScheduler.cancel(it, id) }
         refreshWidgets()
     }

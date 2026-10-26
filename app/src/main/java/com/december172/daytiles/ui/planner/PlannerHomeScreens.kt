@@ -123,6 +123,11 @@ private data class ToolDestination(val route: String, val name: Int, val icon: I
 fun MoreScreen(onNavigatePrimary: (String) -> Unit, onOpen: (String) -> Unit, onBack: () -> Unit) {
     val groups = listOf(
         listOf(
+            ToolDestination("full-schedule", R.string.full_schedule_title, R.drawable.ic_fluent_calendar_agenda_24_regular),
+            ToolDestination("finance", R.string.finance_title, R.drawable.ic_planner_wallet),
+            ToolDestination("recycle-bin", R.string.recycle_bin_title, R.drawable.ic_planner_trash),
+        ),
+        listOf(
             ToolDestination("focus", R.string.focus_title, R.drawable.ic_fluent_timer_24_regular),
             ToolDestination("tags", R.string.tags_title, R.drawable.ic_fluent_tag_24_regular),
             ToolDestination("quadrants", R.string.quadrants_title, R.drawable.ic_fluent_apps_list_24_regular),

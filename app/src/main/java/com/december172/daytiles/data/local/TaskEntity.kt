@@ -10,6 +10,7 @@ import java.time.LocalDate
     indices = [
         Index(value = ["date"]),
         Index(value = ["date", "sortOrder"]),
+        Index(value = ["deletedAt"]),
     ],
 )
 data class TaskEntity(
@@ -26,4 +27,5 @@ data class TaskEntity(
     val sortOrder: Int,
     val createdAt: Long,
     val updatedAt: Long,
+    val deletedAt: Long? = null,
 )

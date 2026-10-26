@@ -42,6 +42,12 @@ android {
         compose = true
         buildConfig = false
     }
+
+    sourceSets.getByName("androidTest") {
+        // Run the same pure unit tests on Android as well as the repository/UI tests.
+        kotlin.srcDir("src/test/java")
+        assets.srcDir("schemas")
+    }
 }
 
 dependencies {
@@ -62,4 +68,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.uiautomator)
 }

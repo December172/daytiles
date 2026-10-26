@@ -5,4 +5,9 @@
     <string name="quadrants_title">優先次序矩陣</string>
     <string name="quadrants_hint">在任務編輯頁標記重要性與緊急程度。未設定優先次序的任務不會歸入象限。</string>
     <string name="help_body">透過側邊選單開啟任務目標、優先次序矩陣、週檢視、課程表及專注時鐘。</string>
+    <string name="finance_title">記賬與預算</string>
+    <string name="recycle_bin_title">回收站</string>
+    <string name="empty_bin">清空回收站</string>
+    <string name="empty_bin_hint">回收站為空。</string>
+    <string name="delete_task_confirmation">將任務移至回收站？你可以稍後恢復。</string>
 </resources>

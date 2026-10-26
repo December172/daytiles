@@ -222,7 +222,7 @@ fun CalendarScreen(
 }
 
 @Composable
-private fun MonthPicker(month: YearMonth, onDismiss: () -> Unit, onSelect: (YearMonth) -> Unit) {
+internal fun MonthPicker(month: YearMonth, onDismiss: () -> Unit, onSelect: (YearMonth) -> Unit) {
     var year by remember { mutableIntStateOf(month.year) }
     val locale = LocalConfiguration.current.locales[0]
     AlertDialog(

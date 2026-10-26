@@ -27,6 +27,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import com.december172.daytiles.ui.planner.MoreScreen
 import com.december172.daytiles.ui.planner.WidgetsScreen
+import com.december172.daytiles.ui.planner.FullScheduleScreen
+import com.december172.daytiles.ui.planner.RecycleBinScreen
+import com.december172.daytiles.ui.planner.BudgetScreen
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavType
@@ -59,6 +62,9 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
     val destinations = listOf(
         DrawerDestination("calendar", R.string.calendar_tab, R.drawable.ic_fluent_calendar_month_24_regular),
         DrawerDestination("tasks", R.string.tasks_tab, R.drawable.ic_fluent_clipboard_task_24_regular),
+        DrawerDestination("full-schedule", R.string.full_schedule_title, R.drawable.ic_fluent_calendar_agenda_24_regular),
+        DrawerDestination("finance", R.string.finance_title, R.drawable.ic_planner_wallet),
+        DrawerDestination("recycle-bin", R.string.recycle_bin_title, R.drawable.ic_planner_trash),
         DrawerDestination("tags", R.string.tags_title, R.drawable.ic_fluent_tag_24_regular),
         DrawerDestination("goals", R.string.goals_title, R.drawable.ic_fluent_target_24_regular),
         DrawerDestination("quadrants", R.string.quadrants_title, R.drawable.ic_fluent_apps_list_24_regular),
@@ -134,6 +140,13 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
         },
     ) {
     NavHost(navController = navController, startDestination = CALENDAR_ROUTE) {
+        composable("full-schedule") {
+            FullScheduleScreen(onBack = { navController.navigateUp() },
+                onEdit = { task -> navController.navigate("task/${task.date}?taskId=${task.id}") },
+                onAdd = { date -> navController.navigate("new-task/$date") })
+        }
+        composable("recycle-bin") { RecycleBinScreen(onBack = { navController.navigateUp() }) }
+        composable("finance") { BudgetScreen(onBack = { navController.navigateUp() }) }
         composable(CALENDAR_ROUTE) {
             CalendarRoute(
                 onOpenDay = { date -> navController.navigate("day/$date") },
