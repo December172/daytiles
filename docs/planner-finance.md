@@ -45,3 +45,19 @@ ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
 ```
 
 The first connected run needs network access to resolve Android's test-platform components. Connected test tasks install and remove debug applications; the UI tests also export screenshots cropped inside Android before copying them out of the emulator.
+
+## Physical-device verification — 2026-10-28
+
+The same 32 tests passed on a connected vivo V2425A running Android 16 (API 36), with zero failures, in 84.01 seconds. This includes the four end-to-end UI cases and the existing calendar, course layout, tag, date, money, repository, migration, and localization checks listed above.
+
+The automated suite used the current production sources with a temporary application ID, `com.december172.daytiles.phonetest`, and a separate test application. This kept Empty bin and budget-editing tests separate from the user's existing records. UI test launches now reset the task through the shell; screenshot cropping ignores empty navigation-bar sources reported by the phone. No production feature code changed during this verification.
+
+The original application was backed up and updated in place. Its database migrated from schema 8 to 9. A separate Android-native check compared the original columns, row counts, and row hashes in all seven existing entity tables, checked preferences and imported sticker file hashes, and passed SQLite's integrity check. Android's generated `profileInstalled` marker was excluded from the user-file comparison. The original application's Full schedule, Recycle Bin, and Expenses & budgets pages also passed navigation checks.
+
+Both normal and isolated debug APK/test APK builds completed successfully. All temporary test applications were removed, leaving the updated original application open on its main calendar. Widget pinning was not tested on vivo.
+
+## Version 0.3.0 release verification — 2026-10-28
+
+Version 0.3.0 uses version code 4. After the version update and physical-device test-harness changes, `assembleDebug`, `assembleDebugAndroidTest`, and `lintDebug` passed. All 32 connected tests passed again on the disposable API 37 emulator, with zero failures, errors, or skipped cases. Lint reported zero errors and two existing tool-version update advisories.
+
+The packaged APK's application ID, version name, and version code were checked directly. Its signing certificate matches the published 0.2.0 APK, preserving in-place update compatibility. The release includes the installable debug-signed APK and its SHA256SUMS file.

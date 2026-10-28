@@ -1,10 +1,8 @@
 package com.december172.daytiles
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.SystemClock
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -37,7 +35,6 @@ class PlannerUiTest {
     private val expenses = mutableListOf<Long>()
     private val today = LocalDate.now()
     private lateinit var originalCurrency: String
-    private var scenario: ActivityScenario<MainActivity>? = null
     private fun text(id: Int) = context.getString(id)
     private fun find(selector: BySelector): UiObject2 =
         requireNotNull(device.wait(Until.findObject(selector), 10_000)) { "Missing UI element: $selector" }
@@ -59,8 +56,9 @@ class PlannerUiTest {
         return find(selector)
     }
     private fun openFeature(id: Int, rootTag: String? = null) {
-        scenario?.close()
-        scenario = ActivityScenario.launch(Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+        // Launch through the shell so repeated task resets also work on physical devices.
+        val launch = device.executeShellCommand("am start -W -f 0x10008000 -n ${context.packageName}/${MainActivity::class.java.name}")
+        assertTrue(launch, launch.contains("Status: ok"))
         click(R.string.me_tab)
         scrollTo(By.text(text(id))).click()
         if (rootTag != null) find(By.res(rootTag))
@@ -72,7 +70,7 @@ class PlannerUiTest {
     }
 
     @After fun clean() = runBlocking<Unit> {
-        scenario?.close()
+        device.pressHome()
         tasks.forEach { repo.deleteTask(it); repo.permanentlyDeleteTask(it) }
         expenses.forEach { repo.deleteExpense(it) }
         for (code in listOf("CNY", "HKD")) {
@@ -244,8 +242,13 @@ class PlannerUiTest {
         assertTrue(device.takeScreenshot(original))
         val bitmap = requireNotNull(BitmapFactory.decodeFile(original.path))
         val windows = device.executeShellCommand("dumpsys window displays")
-        val top = Regex("type=statusBars frame=\\[0,0]\\[\\d+,(\\d+)]").find(windows)!!.groupValues[1].toInt()
-        val bottom = Regex("type=navigationBars frame=\\[0,(\\d+)]").find(windows)!!.groupValues[1].toInt()
+        val top = Regex("type=statusBars frame=\\[0,0]\\[\\d+,(\\d+)]").findAll(windows)
+            .map { it.groupValues[1].toInt() }.maxOrNull()?.coerceIn(0, bitmap.height - 1) ?: 0
+        // Some phones also report an empty navigation-bar source at [0,0][0,0].
+        val bottom = Regex("type=navigationBars frame=\\[0,(\\d+)]\\[\\d+,(\\d+)]").findAll(windows)
+            .map { it.groupValues[1].toInt() to it.groupValues[2].toInt() }
+            .filter { (start, end) -> start > top && end > start }
+            .minOfOrNull { it.first }?.coerceAtMost(bitmap.height) ?: bitmap.height
         val cropped = Bitmap.createBitmap(bitmap, 0, top, bitmap.width, bottom - top)
         File(folder, "$name.png").outputStream().use { assertTrue(cropped.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         cropped.recycle(); bitmap.recycle()
