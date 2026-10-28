@@ -1,98 +1,62 @@
-# Reference appearance milestone
+# 参考应用外观改版里程碑
 
-DayTiles now follows the main layout of the installed reference app,
-`com.zjzy.calendartime`. The implementation uses native Compose components,
-DayTiles icons, and the existing local repository.
+[简体中文（默认）](redesign.md) | [English](redesign.en.md)
 
-## Included
+DayTiles 的主要布局参考设备上已安装的 `com.zjzy.calendartime`。界面使用原生 Compose 组件、DayTiles 自有图标和已有的本地数据仓库实现。
 
-- White surfaces, orange actions, light separators, blue task filters, and compact centered toolbars; a corresponding dark palette.
-- Five primary destinations: Schedule, View, Target, Widget, and Me. The drawer and Me keep the focus clock, tags, priority matrix, week view, and course tools accessible.
-- A full-height, Sunday-first month grid with adjacent-month dates, an orange today marker, pale task/journal previews, and date-attached stickers.
-- Horizontal swipes and a year/month picker for calendar navigation; Today returns to the current date.
-- Offline lunar date labels from Android's bundled ICU calendar.
-- A flat task list with circular completion controls and existing tag/date filters. Tap a task to open its full editor; tap a date heading to open its journal and stickers.
-- A bottom quick-entry panel with title, details, tags, priority, and optional reminders. Existing tasks retain full-screen editing and subtasks.
-- A target page with a week strip, a real empty state, and a goal editor for the existing daily/weekly completion targets.
-- A widget catalogue that requests the launcher's add-widget flow, with instructions when the launcher does not support pin requests.
-- A grouped Me page for local planning tools.
+## 已包含的改动
 
-The Room schema and journal/task/sticker entities are unchanged. Journals remain
-independent of tasks, and no account or external service is required. Reference
-screenshots, branding, subscriptions, and cloud features are not bundled.
+- 白色界面、橙色操作、浅色分隔线、蓝色任务筛选和紧凑居中工具栏，同时提供对应的深色配色。
+- 日程、视图、目标、小组件和我的五个主要入口。侧边栏和「我的」仍可访问专注时钟、标签、优先级矩阵、周视图及课程工具。
+- 充分利用屏幕高度、以周日为首日的月历，显示相邻月份日期、橙色今天标记、浅色任务/日记预览和按日期放置的贴纸。
+- 左右滑动及年月选择器用于切换月份，「今天」返回当前日期。
+- 使用 Android 自带 ICU 日历离线计算农历日期标签。
+- 扁平任务列表提供圆形完成控件及已有的标签、日期筛选。点击任务进入完整编辑页，点击日期标题进入当天的日记和贴纸页面。
+- 底部快速输入面板支持标题、详情、标签、优先级和可选提醒；已有任务仍支持全屏编辑和子任务。
+- 目标页面提供周日期栏、真实空状态和已有每日/每周完成目标的编辑器。
+- 小组件目录调用桌面启动器的添加流程；启动器不支持自动添加请求时，提供操作说明。
+- 「我的」页面按组展示本地规划工具。
 
-## Original v0.2.0 verification
+这一轮改版未改变 Room 数据库结构及日记、任务、贴纸实体。日记仍独立于任务，不需要账户或外部服务。应用未打包参考应用的截图、品牌、订阅或云功能。
+
+## 原始 v0.2.0 验证
 
 ```shell
 ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
   ./gradlew --offline assembleDebug testDebugUnitTest lintDebug
 ```
 
-The v0.2.0 verification run passed all 10 unit tests and Android Lint with zero
-errors. Lint still reports 50 warnings. The month display tests include adjacent
-months across a year boundary, leap days, every possible week start, and a
-four-week February.
+v0.2.0 验证中的 10 项单元测试全部通过，Android Lint 无错误，仍有 50 条警告。月历测试覆盖跨年时的相邻月份、闰日、所有可能的每周首日，以及仅有四周的二月。
 
-Device checks on the connected V2425A covered quick task creation, task
-completion, full editing with the keyboard visible, saving/reopening a subtask,
-and deleting the temporary task. Navigation checks covered the five main tabs,
-the goal editor, focus clock, drawer scrolling and back handling, month swipes,
-and the month picker.
-Light/dark appearance and Simplified Chinese were checked; the device's original
-light mode and app locale settings were restored afterward.
+在连接的 V2425A 上检查了快速创建任务、完成任务、键盘显示时的完整编辑、保存并重新打开子任务，以及删除临时任务。导航检查覆盖五个主标签、目标编辑器、专注时钟、侧边栏滚动与返回、月份滑动和月份选择器。还检查了浅色/深色外观与简体中文，随后恢复设备原有的浅色模式和应用语言设置。
 
-A database comparison after the checks confirmed that every pre-existing table
-contained exactly its original rows. No temporary test task, subtask, or goal was
-left behind. Screenshots use an empty month or neutral tool pages and exclude
-system bars and personal entries.
+检查后的数据库比对确认：每张原有表都保留了原来的全部记录，未残留临时任务、子任务或目标。截图采用空白月份或中性工具页面，并去除了系统栏和个人条目。
 
-The widget catalogue button was exercised on this device, but successful desktop
-pinning was not confirmed. Widget placement remains dependent on the launcher.
+该设备上操作过小组件目录中的添加按钮，但未确认小组件成功放置到桌面。放置行为仍依赖启动器支持。
 
-Current screenshots are in the README. The APK is
-`app/build/outputs/apk/debug/app-debug.apk`. Visual equivalence is based on the
-reference installed on the connected device; this is not a pixel-by-pixel match
-for every reference screen or theme. Lunar labels do not include solar terms or
-public-holiday annotations.
+当前截图见 README，APK 位于 `app/build/outputs/apk/debug/app-debug.apk`。外观对齐以连接设备上安装的参考应用为依据，并非对参考应用每个页面和主题逐像素复刻。农历标签不含节气和法定节假日标注。
 
-## Planner follow-up
+## 规划功能后续改进
 
-- Settings now includes a persistent **Show Chinese lunar dates** switch. It defaults to enabled and immediately updates the month calendar without changing journal, task, or sticker data.
-- The drawer has one Week view shortcut. Course timetable and Course Scheduler are combined into a single Course timetable destination in both the drawer and Me.
-- The course screen uses the installed `com.comingx.zanao` course workflow as a layout reference: a weekly grid, date/week controls, a top add action, clickable class blocks, and a full-page editor. Tap a blank slot to preselect its weekday and time. The toolbar also opens a course list within this screen. Classes retain their existing weekly recurrence, location, and optional reminders; overlapping classes use separate selectable lanes.
-- Editing or deleting a course without an existing reminder no longer passes a null PendingIntent to AlarmManager.
-- Widget pinning now tracks the launcher's placement callback. An accepted request shows a waiting state; success appears only after the callback identifies a bound widget. Unsupported, failed, or unconfirmed requests provide retry and manual instructions, including an action to open the home screen. The [Android pinning API](https://developer.android.com/reference/android/appwidget/AppWidgetManager#requestPinAppWidget(android.content.ComponentName,%20android.os.Bundle,%20android.app.PendingIntent)) does not report user cancellation as a failure callback, so an unconfirmed request is not treated as successful placement.
+- 设置增加可持久化的「显示中国农历」开关，默认开启，立即更新月历，不改变日记、任务或贴纸数据。
+- 侧边栏仅保留一个周视图快捷入口。课程表和课程排程在侧边栏及「我的」中统一为一个课程表入口。
+- 课程页面参考设备上安装的 `com.comingx.zanao` 课程流程：每周网格、日期/周次控件、顶部新增操作、可点击课程块和完整编辑页。点击空白时段会预选对应星期与时间，工具栏还可在当前页面内打开课程列表。保留已有的每周重复、地点和可选提醒，重叠课程使用独立且可单独选择的列。
+- 编辑或删除没有提醒的课程时，不再向 AlarmManager 传入空 PendingIntent。
+- 小组件添加会跟踪启动器的放置回调。请求被接受后显示等待状态，只有回调确认已经绑定的小组件后才显示成功。不支持、失败或未确认的请求提供重试与手动操作说明，并可打开桌面。[Android 添加小组件 API](https://developer.android.com/reference/android/appwidget/AppWidgetManager#requestPinAppWidget(android.content.ComponentName,%20android.os.Bundle,%20android.app.PendingIntent)) 不会在用户取消时返回失败回调，因此未确认的请求不会被视为放置成功。
 
-The initial follow-up build passed `assembleDebug`, all 13 unit tests, and `lintDebug`
-with zero errors, 59 warnings, and two hints. Three new layout tests cover
-adjacent classes, overlapping classes, and reuse of lanes across overlapping
-groups. No Room schema or entity changes are required.
+最初的后续构建通过了 `assembleDebug`、全部 13 项单元测试和 `lintDebug`，Lint 无错误，有 59 条警告和 2 条提示。新增的 3 项布局测试覆盖相邻课程、重叠课程及重叠课程组之间的列复用。无需修改 Room 数据库结构或实体。
 
-On the V2425A, lunar labels were toggled off and on in the actual month view,
-checked after a process restart, and restored to enabled. The drawer was checked
-for duplicate week and course entries. Widget placement testing on vivo was
-stopped at the user's request.
+在 V2425A 的实际月历中关闭并重新开启农历标签，重启进程后确认设置仍保留，随后恢复为开启。侧边栏检查了重复的周视图与课程入口。按用户要求，停止在 vivo 上测试小组件放置。
 
-On the Android API 37 emulator with the standard launcher, pinning opened the
-native confirmation dialog, placed a real task widget, and returned the success
-callback. Cancelling placement showed manual instructions without reporting
-success; retrying and confirming completed placement. Course checks covered
-creation from a blank slot, start/end time selection, editing, deletion without
-a reminder, weekly navigation, and the integrated course list.
-The setting, timetable, and course editor were also checked in Simplified
-Chinese, and the emulator's app language was restored afterward.
+Android API 37 模拟器的标准启动器打开了原生确认弹窗，实际放置了任务小组件，并返回成功回调。取消放置后显示手动操作说明，没有误报成功；重试并确认后完成放置。课程检查覆盖从空白时段创建、选择起止时间、编辑、删除无提醒课程、按周导航及集成课程列表。还用简体中文检查了设置、课程表和课程编辑器，随后恢复模拟器原有应用语言。
 
-A read-only database comparison after installation confirmed that all records
-present before these changes were retained. A course added on the device during
-the checks was also preserved.
+安装后的只读数据库比对确认：改动前存在的全部记录均被保留。检查期间在设备上新增的一门课程也被保留。
 
-The README screenshots show the current drawer, planning tools, widget feedback,
-course timetable, and calendar setting. Course examples use neutral sample data.
+README 截图展示更新后的侧边栏、规划工具、小组件反馈、课程表和日历设置，课程示例使用中性数据。
 
-## Build warning cleanup
+## 构建警告清理
 
-The full rebuild now passes with no Kotlin or Gradle warnings. Android Lint
-reports zero errors, warnings, or hints, and all 13 JVM unit tests pass:
+这一轮完整重建没有 Kotlin 或 Gradle 警告。Android Lint 的错误、警告和提示均为零，全部 13 项 JVM 单元测试通过：
 
 ```shell
 ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
@@ -100,63 +64,27 @@ ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
   --rerun-tasks --warning-mode all
 ```
 
-On Android 12 and later, todo widgets use
-[RemoteCollectionItems](https://developer.android.com/develop/ui/views/appwidgets/collections#use-remotecollectionitems-to-pass-along-a-collection-directly)
-to deliver rows directly. The Android 8–11 branch retains the required service
-adapter, with deprecation annotations limited to its two compatibility helpers.
-Both adapters share the same task-row rendering. Broadcast updates keep their
-pending result until the database read and widget update finish.
+Android 12 及以上版本的待办小组件通过 [RemoteCollectionItems](https://developer.android.com/develop/ui/views/appwidgets/collections#use-remotecollectionitems-to-pass-along-a-collection-directly) 直接提供列表行。Android 8–11 分支保留必需的服务适配器，弃用注解仅限两个兼容辅助函数。两种适配器共用任务行渲染逻辑；广播更新保留异步结果，直到数据库读取和小组件更新完成。
 
-Widget preview and target-cell attributes now live in `xml-v31`, alongside the
-base descriptors for older Android versions. The cleanup also removes 19 unused
-string keys in both languages, uses quantity resources for goal and break labels,
-removes checks below the app's API 26 minimum, and updates preference edits and
-integer Compose state. Task-widget metadata and expanded month grids use 11sp.
-Narrow month widgets retain their compact size to fit all seven columns.
+小组件预览和目标网格单元属性移至 `xml-v31`，旧版 Android 仍有基础描述文件。同时移除了两种语言中 19 个未使用的字符串键，为目标和休息标签使用数量资源，删除低于应用最低 API 26 的判断，并更新偏好写入方式及 Compose 整数状态。任务小组件元数据和展开月历网格使用 11sp，较窄的月历小组件仍保持紧凑字号，以容纳全部七列。
 
-Each launcher-hosted widget layout documents a local exception for Lint's
-activity-window background overdraw check. Its opaque widget background is
-needed when the launcher draws the RemoteViews. No global Lint baseline or
-disabled check is added.
+每个由启动器承载的小组件布局都说明了针对 Lint 活动窗口背景过度绘制检查的局部例外。启动器绘制 RemoteViews 时需要小组件的不透明背景。没有增加全局 Lint 基线或全局禁用检查。
 
-Runtime regression for this cleanup used only the API 37 emulator
-(`emulator-5554`). It covered task-widget population and completion, native widget
-pin cancellation and retry, the month widget's visible grid, English singular
-and plural labels, Chinese quantity labels, focus start/pause/resume/stop with
-persisted preferences, lunar display across a process restart, drawer entries,
-and course creation/editing/deletion without a reminder. The crash buffer stayed
-empty. Temporary database records were removed after the run, and the emulator's
-app language and focus preferences were restored. The Android 8–11 compatibility
-branch was checked by compilation and Lint; runtime checks used API 37.
+这一轮运行时回归仅使用 API 37 模拟器（`emulator-5554`），覆盖任务小组件填充与勾选、原生小组件添加的取消和重试、月历小组件可见网格、英语单复数标签、中文数量标签、专注开始/暂停/继续/停止及偏好持久化、进程重启后的农历显示、侧边栏入口，以及无提醒课程的新增/编辑/删除。崩溃缓冲区保持为空。结束后删除临时数据库记录，恢复模拟器原有应用语言和专注偏好。Android 8–11 兼容分支通过编译和 Lint 检查，运行时检查使用 API 37。
 
-## Traditional Chinese localization
+## 繁体中文本地化
 
-Hong Kong (`zh-HK`) and Taiwan (`zh-TW`) now use shared Traditional Chinese
-resources, with regional wording for course and priority labels. The script
-fallback also handles explicit `zh-Hant` locales. These locales previously lacked
-matching app resources and displayed English instead.
+香港（`zh-HK`）和台湾（`zh-TW`）共用繁体中文资源，并对课程及优先级标签使用地区用语。脚本回退也支持显式 `zh-Hant` 语言标签。这些地区之前没有匹配资源，会显示英语。
 
-Focus durations use localized minute units. Lunar month names and the leap-month
-prefix come from resources, including Traditional Chinese `臘` and `閏`, and the
-calendar refreshes those labels when its locale changes.
+专注时长使用本地化的分钟单位。农历月份及闰月前缀来自资源，包括繁体的「臘」和「閏」；语言发生变化时，日历会刷新这些标签。
 
-Verification used only the API 37 emulator:
+验证仅使用 API 37 模拟器：
 
-- `assembleDebug`, all 13 JVM unit tests, and `lintDebug` passed with zero Lint issues.
-- An on-device instrumentation check passed 841 assertions across `zh-HK`,
-  `zh-TW`, `zh-Hant`, `zh-Hant-HK`, `zh-Hant-TW`, `zh-CN`, and `en-US`, covering
-  translated strings, regional overrides, arrays, quantity resources, and units.
-- Both regional interfaces were checked for navigation, quick task entry, goals,
-  widgets, calendar settings, and course editing. Course creation, location
-  editing, and deletion without reminders passed in both languages.
-- Lunar display was toggled off, checked after a process restart, and restored.
-  January 2027 and July 2025 views displayed `臘月` and leap-month labels correctly.
-- Focus start, pause, resume, and stop passed in both languages. English calendar,
-  settings, and focus screens and Simplified Chinese minute units were also checked.
-- All seven entity tables matched their sample-data snapshot after the checks.
-  SQLite integrity was valid, and the app had no entries in the crash buffer.
+- `assembleDebug`、全部 13 项 JVM 单元测试及 `lintDebug` 通过，Lint 问题数为零。
+- 设备内插桩检查在 `zh-HK`、`zh-TW`、`zh-Hant`、`zh-Hant-HK`、`zh-Hant-TW`、`zh-CN` 和 `en-US` 上通过 841 条断言，覆盖翻译字符串、地区覆盖、数组、数量资源及单位。
+- 两种地区界面均检查了导航、任务快速输入、目标、小组件、日历设置和课程编辑；新增课程、编辑地点及删除无提醒课程均通过。
+- 关闭农历显示，重启进程确认，再恢复开启。2027 年 1 月及 2025 年 7 月视图正确显示「臘月」和闰月标签。
+- 两种语言下的专注开始、暂停、继续和停止均通过；同时检查了英语月历、设置和专注页面，以及简体中文分钟单位。
+- 检查后全部 7 张实体表与示例数据快照一致，SQLite 完整性有效，应用未在崩溃缓冲区留下记录。
 
-Each regional README includes ten screenshots captured and cropped inside the
-emulator before export. Pixel comparisons confirmed that the 1080 × 2274 PNGs
-only remove the system bars. The Simplified Chinese focus screenshot was also
-updated to show its localized minute units.
+各地区 README 均包含 10 张在模拟器内截图、裁剪后才导出的图片。像素比对确认 1080 × 2274 PNG 仅移除系统栏。简体中文专注截图也已更新，显示本地化后的分钟单位。

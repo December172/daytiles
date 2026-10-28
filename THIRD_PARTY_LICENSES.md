@@ -1,8 +1,12 @@
-# Third-party licenses
+# 第三方许可
+
+[简体中文（默认）](THIRD_PARTY_LICENSES.md) | [English](THIRD_PARTY_LICENSES.en.md)
 
 ## Fluent System Icons
 
-The navigation VectorDrawable assets in `app/src/main/res/drawable/ic_fluent_*` are from Microsoft's [Fluent System Icons](https://github.com/microsoft/fluentui-system-icons) project.
+`app/src/main/res/drawable/ic_fluent_*` 中的导航 VectorDrawable 图标来自 Microsoft 的 [Fluent System Icons](https://github.com/microsoft/fluentui-system-icons) 项目。
+
+以下保留 MIT 许可原文：
 
 ```text
 MIT License

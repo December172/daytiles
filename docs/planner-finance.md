@@ -1,42 +1,44 @@
-# Full schedule, Recycle Bin, and expense budgets
+# 全部日程、回收站与记账预算
 
-The drawer and Me page now provide three additional planning destinations.
+[简体中文（默认）](planner-finance.md) | [English](planner-finance.en.md)
 
-- **Full schedule** shows all active tasks in chronological date groups across past and future months. It includes completion filters, editing, quick task creation, completion checkboxes, and a Today shortcut.
-- **Recycle Bin** retains deleted tasks, including their original dates, details, tags, completion state, reminder metadata, and subtasks. Restore returns a task to its original date. Permanent deletion and Empty bin require confirmation; task and subtask removal runs in one transaction.
-- **Expenses & budgets** records dated expenses with amounts, categories, and optional notes. Daily and monthly views show the applicable records, totals, budgets, and remaining or over-budget amounts. Expenses can be edited or deleted; budgets can be edited or removed independently.
+侧边栏和「我的」页面新增三个规划入口：
 
-Money uses integer minor units with exact decimal parsing. Inputs with excess decimal places, nonpositive expense amounts, and out-of-range amounts are rejected. Zero budgets are supported. CNY, HKD, TWD, and USD are separate ledgers; changing the selected currency does not convert existing amounts.
+- **全部日程**：按照日期分组，以时间线展示过去和未来所有月份的有效任务。支持完成状态筛选、编辑、快速添加、勾选完成及返回今天。
+- **回收站**：保留已删除任务的原日期、详情、标签、完成状态、提醒信息和子任务。恢复后任务返回原日期。永久删除和清空回收站均需确认，任务与子任务在同一个数据库事务中删除。
+- **记账与预算**：记录支出日期、金额、分类及可选备注。每日和每月视图展示对应记录、合计、预算，以及剩余或超支金额。支出可编辑或删除，预算可单独编辑或移除。
 
-## Persistence
+金额以整数最小货币单位保存，并采用精确的十进制解析。小数位过多、非正数支出和超出范围的金额会被拒绝；预算可以为零。CNY、HKD、TWD 和 USD 使用独立账本，切换币种不会换算已有金额。
 
-Room schema 9 adds a nullable deletion timestamp to tasks and introduces separate expense and budget tables. Existing journal, task, sticker, subtask, target, and course records are retained. Active task queries exclude recycled tasks, including calendar views, targets, tags, focus choices, and widgets.
+## 数据持久化
 
-Moving a task to the bin cancels its pending reminder. Restore schedules a reminder only for an unfinished task whose reminder remains in the future. Stale task or subtask editors cannot rewrite a task while it is in the bin.
+Room schema 9 为任务增加可为空的删除时间戳，并新增独立的支出表和预算表。原有日记、任务、贴纸、子任务、目标和课程数据均保留。正常任务查询会排除回收站中的任务，包括日历、目标、标签、专注关联任务和小组件查询。
 
-## Emulator verification — 2026-10-26
+任务移入回收站后，其待触发提醒会被取消。恢复时，仅为未完成且提醒时间仍在未来的任务重新安排提醒。已经打开的旧任务或子任务编辑器不能改写回收站中的任务。
 
-All runtime tests ran on the Android API 37 emulator, using a disposable, read-only AVD session. No physical device was used.
+## 模拟器验证——2026-10-26
 
-| Test group | Cases |
+这一轮所有运行时测试均在 Android API 37 模拟器中执行，使用临时、只读 AVD 会话，未使用实体设备。
+
+| 测试组 | 用例数 |
 | --- | ---: |
-| Existing calendar, course layout, tag, and date-converter unit tests | 13 |
-| Exact decimal amounts, validation, boundaries, and currency formatting | 5 |
-| Timeline, recovery, permanent removal, expense/budget isolation, and persistence | 8 |
-| Room 8→9 migration with all seven existing entity tables | 1 |
-| Supported Chinese locale resources | 1 |
-| End-to-end timeline, recycle-bin, expense, and budget UI flows | 4 |
-| **Total on emulator** | **32** |
+| 已有日历、课程布局、标签及日期转换单元测试 | 13 |
+| 精确金额、输入校验、边界与币种格式化 | 5 |
+| 时间线、恢复、永久删除、支出/预算隔离与持久化 | 8 |
+| Room 8→9 迁移，覆盖全部 7 张原有实体表 | 1 |
+| 支持的中文地区资源 | 1 |
+| 日程、回收站、支出和预算的端到端界面流程 | 4 |
+| **模拟器合计** | **32** |
 
-The pure unit-test source directory is also included in the Android test source set, so the same assertions execute inside Android. Test method names use DEX-compatible identifiers.
+纯单元测试源码目录也被纳入 Android 测试源码集，因此相同断言在 Android 内执行。测试方法名称使用兼容 DEX 的标识符。
 
-The UI checks cover completion and recovery state, cancellation and confirmation of permanent removal, daily versus monthly records, over-budget and zero-budget display, currency isolation, editing, and deletion. Application restart/database reopen persistence is checked separately.
+界面检查覆盖完成与恢复状态、取消及确认永久删除、每日与每月记录、超支与零预算显示、币种隔离、编辑和删除。应用重启及数据库重新打开后的持久化另有独立测试。
 
-An additional real APK upgrade from version 8 to version 9 preserved every original field and row in all seven existing entity tables. Android's SQLite integrity check passed. The same comparison passed after the UI tests cleaned up their temporary records. English, Simplified Chinese, Hong Kong Traditional Chinese, and Taiwan Traditional Chinese navigation and all three new screens were also checked on the emulator.
+还进行了数据库 schema 8→9 的实际 APK 覆盖升级：7 张原有实体表的每一行、每个原有字段均保留，Android SQLite 完整性检查通过。界面测试清理临时数据后，同样的数据比对再次通过。模拟器还检查了英语、简体中文、香港繁体和台湾繁体的导航及三个新增页面。
 
-Build and Lint completed successfully. Kotlin compilation emitted no warnings. Lint has zero errors and three tool-version update advisories for the existing Gradle, Android Gradle Plugin, and Kotlin versions.
+构建与 Lint 均通过，Kotlin 编译无警告。该轮 Lint 无错误，存在 Gradle、Android Gradle Plugin 和 Kotlin 的 3 条工具版本更新提示。
 
-Start a disposable API 37 emulator before running:
+启动临时 API 37 模拟器后运行：
 
 ```shell
 ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
@@ -44,20 +46,20 @@ ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \
   assembleDebug connectedDebugAndroidTest lintDebug --no-configuration-cache
 ```
 
-The first connected run needs network access to resolve Android's test-platform components. Connected test tasks install and remove debug applications; the UI tests also export screenshots cropped inside Android before copying them out of the emulator.
+首次运行连接设备测试需要联网解析 Android 测试平台组件。连接设备测试会安装、卸载调试应用；界面测试还会先在 Android 内裁剪截图，再从模拟器复制导出。
 
-## Physical-device verification — 2026-10-28
+## 实体设备验证——2026-10-28
 
-The same 32 tests passed on a connected vivo V2425A running Android 16 (API 36), with zero failures, in 84.01 seconds. This includes the four end-to-end UI cases and the existing calendar, course layout, tag, date, money, repository, migration, and localization checks listed above.
+同一组 32 项测试在连接的 vivo V2425A（Android 16 / API 36）上全部通过，无失败，耗时 84.01 秒。其中包含上表所列的 4 项端到端界面测试，以及日历、课程布局、标签、日期、金额、仓库、迁移和本地化检查。
 
-The automated suite used the current production sources with a temporary application ID, `com.december172.daytiles.phonetest`, and a separate test application. This kept Empty bin and budget-editing tests separate from the user's existing records. UI test launches now reset the task through the shell; screenshot cropping ignores empty navigation-bar sources reported by the phone. No production feature code changed during this verification.
+自动化测试使用当时的功能源码，以临时应用 ID `com.december172.daytiles.phonetest` 构建独立副本，并使用独立测试应用。清空回收站和修改预算的操作因此不会影响用户已有记录。界面测试通过 shell 重置并启动应用页面；截图裁剪会忽略手机报告的空导航栏区域。这次验证没有修改应用功能代码。
 
-The original application was backed up and updated in place. Its database migrated from schema 8 to 9. A separate Android-native check compared the original columns, row counts, and row hashes in all seven existing entity tables, checked preferences and imported sticker file hashes, and passed SQLite's integrity check. Android's generated `profileInstalled` marker was excluded from the user-file comparison. The original application's Full schedule, Recycle Bin, and Expenses & budgets pages also passed navigation checks.
+原应用先备份，再覆盖更新，数据库由 schema 8 升级至 9。独立的 Android 原生检查核对了全部 7 张原有实体表的原字段、行数和行哈希，同时核对设置与导入贴纸的文件哈希，并通过 SQLite 完整性检查。用户文件比对不包含 Android 自动生成的 `profileInstalled` 标记。原应用的全部日程、回收站和记账预算页面也通过导航检查。
 
-Both normal and isolated debug APK/test APK builds completed successfully. All temporary test applications were removed, leaving the updated original application open on its main calendar. Widget pinning was not tested on vivo.
+正常版本与独立副本的调试 APK、测试 APK 均构建成功。临时测试应用全部移除，更新后的原应用停留在主月历页面。本轮未在 vivo 上测试添加桌面小组件。
 
-## Version 0.3.0 release verification — 2026-10-28
+## 0.3.0 发布验证——2026-10-28
 
-Version 0.3.0 uses version code 4. After the version update and physical-device test-harness changes, `assembleDebug`, `assembleDebugAndroidTest`, and `lintDebug` passed. All 32 connected tests passed again on the disposable API 37 emulator, with zero failures, errors, or skipped cases. Lint reported zero errors and two existing tool-version update advisories.
+0.3.0 的 versionCode 为 4。更新版本号并调整真机测试脚本后，`assembleDebug`、`assembleDebugAndroidTest` 和 `lintDebug` 均通过。临时 API 37 模拟器上的全部 32 项连接设备测试再次通过，无失败、错误或跳过项。Lint 无错误，保留 2 条已有的工具版本更新提示。
 
-The packaged APK's application ID, version name, and version code were checked directly. Its signing certificate matches the published 0.2.0 APK, preserving in-place update compatibility. The release includes the installable debug-signed APK and its SHA256SUMS file.
+直接检查了打包 APK 的应用 ID、版本名称和版本号。签名证书与已发布的 0.2.0 APK 一致，可继续覆盖升级。发布附件包含可安装的 debug 签名 APK 和 SHA256SUMS 文件。

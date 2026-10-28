@@ -1,36 +1,51 @@
-# Project: Daytiles
+# 项目：DayTiles
 
-## Purpose
-Offline-first Android journal and visual planner.
+[简体中文（默认）](AGENTS.md) | [English](AGENTS.en.md)
 
-## Stack
+## 目标
+
+以离线使用为核心的 Android 日记与可视化规划应用。
+
+## 技术栈
+
 - Kotlin
-- Jetpack Compose with Material 3
+- Jetpack Compose 与 Material 3
 - Room / SQLite
-- Coroutines and StateFlow
+- Coroutines 与 StateFlow
 - Gradle Kotlin DSL
 
-## Requirements
-- Full-height monthly calendar
-- Native sticker objects attached to dates
-- Dedicated daily journal entries
-- Checkable daily tasks
-- Notes, stickers, and tasks visible in month cells
-- Fully offline operation
-- No ads, subscriptions, or backend
+## 功能要求
 
-## Development rules
-- Prefer simple, maintainable architecture.
-- Use one app module initially.
-- Do not replace journal entries with calendar events.
-- Keep notes, tasks, and stickers as separate data models.
-- Preserve existing user data when changing schemas.
-- Never introduce unnecessary external services.
-- Do not modify unrelated files.
+- 充分利用屏幕高度的月历。
+- 与日期关联的原生贴纸对象。
+- 独立的每日日记条目。
+- 可勾选的每日任务。
+- 在月历日期格中展示日记摘要、贴纸和任务。
+- 完全离线运行。
+- 不含广告、订阅或后端服务。
 
-## Verification
-After changing Kotlin or Gradle code:
-- Run ./gradlew assembleDebug
-- Run relevant unit tests.
-- Report build failures and unresolved issues.
-- Do not claim features work without testing them.
+## 开发规则
+
+- 优先采用简单、易维护的架构。
+- 初期只使用一个应用模块。
+- 不要用日历事件替代日记条目。
+- 日记、贴纸和任务分别使用独立的数据模型。
+- 修改数据库结构时保留已有用户数据。
+- 不要引入不必要的外部服务。
+- 不要修改与任务无关的文件。
+
+## 文档语言
+
+- 所有默认文档使用简体中文，包括根目录 README 和发布说明。
+- 英文文档使用 `.en.md` 后缀；香港、台湾繁体文档使用 `.zh_HK.md`、`.zh_TW.md` 后缀或对应的地区目录。
+- 每个已发布版本均维护简体中文、English、香港繁体和台湾繁体说明。GitHub Release 先展示简体中文正文，其余语言使用可展开的独立章节。
+- 翻译需保留原版本的功能范围、验证结果、下载说明和限制；授权原文保持完整。
+
+## 验证
+
+修改 Kotlin 或 Gradle 代码后：
+
+- 运行 `./gradlew assembleDebug`。
+- 运行相关单元测试。
+- 报告构建失败和未解决的问题。
+- 未经测试，不要声称功能已正常工作。
