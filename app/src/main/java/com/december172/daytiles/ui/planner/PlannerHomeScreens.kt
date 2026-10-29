@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +53,6 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit, pinVi
     Scaffold(
         topBar = { PlannerTopBar(stringResource(R.string.widgets_tab), onBack) },
         bottomBar = { PlannerBottomBar("widgets", onNavigatePrimary) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
@@ -63,7 +61,7 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit, pinVi
             }
             if (pin.status != WidgetPinStatus.IDLE) {
                 item {
-                    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(pin.name), style = MaterialTheme.typography.titleSmall)
                             Text(stringResource(when (pin.status) {
@@ -83,14 +81,14 @@ fun WidgetsScreen(onNavigatePrimary: (String) -> Unit, onBack: () -> Unit, pinVi
                 }
             }
             items(options) { option ->
-                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface) {
+                Card {
                     Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(painterResource(option.icon), null, Modifier.size(30.dp), tint = MaterialTheme.colorScheme.secondary)
                             Text(stringResource(option.name), style = MaterialTheme.typography.titleMedium)
                         }
                         Text(stringResource(option.description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = {
+                        FilledTonalButton(onClick = {
                             pinViewModel.request(ComponentName(context, option.provider), option.name)
                         }, modifier = Modifier.align(Alignment.End)) {
                             Icon(painterResource(R.drawable.ic_planner_add), null, Modifier.size(18.dp))
@@ -144,7 +142,6 @@ fun MoreScreen(onNavigatePrimary: (String) -> Unit, onOpen: (String) -> Unit, on
     Scaffold(
         topBar = { PlannerTopBar(stringResource(R.string.me_tab), onBack) },
         bottomBar = { PlannerBottomBar("more", onNavigatePrimary) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
@@ -159,16 +156,17 @@ fun MoreScreen(onNavigatePrimary: (String) -> Unit, onOpen: (String) -> Unit, on
                 }
             }
             items(groups) { group ->
-                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface) {
+                Card {
                     Column {
                         group.forEachIndexed { index, tool ->
-                            Row(Modifier.fillMaxWidth().clickable { onOpen(tool.route) }.padding(horizontal = 16.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(painterResource(tool.icon), null, Modifier.size(23.dp), tint = MaterialTheme.colorScheme.secondary)
-                                Spacer(Modifier.width(16.dp))
-                                Text(stringResource(tool.name), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                                Icon(painterResource(R.drawable.ic_planner_chevron_right), null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.outline)
-                            }
-                            if (index < group.lastIndex) HorizontalDivider(Modifier.padding(start = 55.dp), color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                            ListItem(
+                                headlineContent = { Text(stringResource(tool.name)) },
+                                leadingContent = { Icon(painterResource(tool.icon), null, Modifier.size(24.dp)) },
+                                trailingContent = { Icon(painterResource(R.drawable.ic_planner_chevron_right), null, Modifier.size(20.dp)) },
+                                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+                                modifier = Modifier.clickable { onOpen(tool.route) },
+                            )
+                            if (index < group.lastIndex) HorizontalDivider(Modifier.padding(start = 56.dp))
                         }
                     }
                 }

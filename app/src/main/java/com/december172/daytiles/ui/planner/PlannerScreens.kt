@@ -102,12 +102,9 @@ private fun GoalsScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
     Scaffold(
         topBar = { PlannerTopBar(stringResource(R.string.target_tab), onBack) },
         bottomBar = { PlannerBottomBar("goals", onNavigatePrimary) },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         floatingActionButton = {
-            FloatingActionButton(onClick = { showEditor = true }, shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(60.dp), elevation = FloatingActionButtonDefaults.elevation(0.dp)) {
-                Icon(painterResource(R.drawable.ic_planner_add), stringResource(R.string.goal_target), Modifier.size(32.dp))
+            FloatingActionButton(onClick = { showEditor = true }) {
+                Icon(painterResource(R.drawable.ic_planner_add), stringResource(R.string.goal_target))
             }
         },
     ) { insets ->
@@ -117,10 +114,10 @@ private fun GoalsScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
                     val date = monday.plusDays(offset)
                     Column(Modifier.weight(1f).clickable { selectedEpoch = date.toEpochDay(); weekly = false }.padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale), fontSize = 12.sp,
+                        Text(date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, locale), style = MaterialTheme.typography.labelMedium,
                             color = if (offset >= 5) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                         Box(Modifier.size(30.dp).then(if (date == selectedDate) Modifier.background(MaterialTheme.colorScheme.primary, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
-                            Text(date.dayOfMonth.toString(), fontSize = 17.sp,
+                            Text(date.dayOfMonth.toString(), style = MaterialTheme.typography.titleMedium,
                                 color = if (date == selectedDate) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
@@ -132,12 +129,12 @@ private fun GoalsScreen(onBack: () -> Unit, onNavigatePrimary: (String) -> Unit)
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(painterResource(R.drawable.ic_fluent_target_24_regular), null, Modifier.size(104.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(Modifier.height(22.dp))
-                    Text(stringResource(R.string.no_goal), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 17.sp)
+                    Text(stringResource(R.string.no_goal), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(10.dp))
-                    Text(stringResource(R.string.add_goal_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Text(stringResource(R.string.add_goal_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
-                Surface(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface,
+                Card(modifier = Modifier.fillMaxWidth().padding(16.dp),
                     onClick = { target = goal; showEditor = true }) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(stringResource(if (weekly) R.string.weekly_goal else R.string.daily_goal), style = MaterialTheme.typography.titleMedium)

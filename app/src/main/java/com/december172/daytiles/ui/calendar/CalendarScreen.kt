@@ -2,7 +2,6 @@ package com.december172.daytiles.ui.calendar
 
 import android.app.DatePickerDialog
 import android.icu.util.ChineseCalendar
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -20,18 +18,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.stringArrayResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -141,7 +138,6 @@ fun CalendarScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             CenterAlignedTopAppBar(
-                expandedHeight = 56.dp,
                 title = {
                     Box {
                         Row(
@@ -151,7 +147,7 @@ fun CalendarScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                         ) {
-                            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Icon(painterResource(R.drawable.ic_planner_chevron_down), stringResource(R.string.choose_month), Modifier.size(17.dp))
                         }
                         DropdownMenu(expanded = showTaskDates, onDismissRequest = { showTaskDates = false }) {
@@ -177,30 +173,25 @@ fun CalendarScreen(
                 },
                 actions = {
                     TextButton(onClick = { onToday(); if (!isCalendar) dayOnly = true }) {
-                        Text(stringResource(R.string.today), fontSize = 12.sp)
+                        Text(stringResource(R.string.today))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
         bottomBar = { PlannerBottomBar(if (isCalendar) "calendar" else "tasks", onNavigatePrimary) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onCreateTask(uiState.selectedDate) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-                modifier = Modifier.size(60.dp),
-                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
             ) {
-                Icon(painterResource(R.drawable.ic_planner_add), stringResource(R.string.new_task), Modifier.size(32.dp))
+                Icon(painterResource(R.drawable.ic_planner_add), stringResource(R.string.new_task))
             }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             if (isCalendar) {
                 WeekdayHeader()
-                MonthGrid(uiState, onDateSelected, onOpenDay, onPreviousMonth, onNextMonth, showLunarDates, Modifier.weight(1f))
+                MonthGrid(uiState, onDateSelected, onOpenDay, onPreviousMonth, onNextMonth, showLunarDates,
+                    Modifier.weight(1f).padding(horizontal = 8.dp).padding(bottom = 8.dp).clip(MaterialTheme.shapes.large))
             } else {
                 TaskOverview(
                     tasks = if (dayOnly) uiState.tasks.filter { it.date == uiState.selectedDate } else uiState.tasks,
@@ -246,12 +237,12 @@ internal fun MonthPicker(month: YearMonth, onDismiss: () -> Unit, onSelect: (Yea
                             Surface(
                                 onClick = { onSelect(YearMonth.of(year, number)) },
                                 color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.weight(1f).padding(3.dp),
                             ) {
                                 Text(YearMonth.of(year, number).month.getDisplayName(TextStyle.SHORT, locale),
                                     Modifier.padding(vertical = 14.dp), textAlign = TextAlign.Center,
-                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -272,27 +263,27 @@ private fun TaskOverview(
     val filtered = if (selectedTag == null) tasks else tasks.filter { selectedTag in parseTaskTags(it.tags) }
     val locale = LocalConfiguration.current.locales[0]
     Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).horizontalScroll(rememberScrollState())) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             (listOf<String?>(null) + tags).forEach { tag ->
                 val selected = selectedTag == tag
-                Box(
-                    Modifier.height(36.dp).widthIn(min = 76.dp).clip(RoundedCornerShape(topStart = 9.dp, topEnd = 9.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.secondary else Color.Transparent)
-                        .selectable(selected, onClick = { onTagSelected(tag) }, role = Role.Tab)
-                        .padding(horizontal = 20.dp), contentAlignment = Alignment.Center,
-                ) {
-                    Text(tag ?: stringResource(R.string.all_filter), fontSize = 14.sp,
-                        color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface)
-                }
+                FilterChip(
+                    selected = selected,
+                    onClick = { onTagSelected(tag) },
+                    label = { Text(tag ?: stringResource(R.string.all_filter)) },
+                    leadingIcon = if (selected) { {
+                        Icon(painterResource(R.drawable.ic_planner_check), null, Modifier.size(FilterChipDefaults.IconSize))
+                    } } else null,
+                )
             }
         }
         if (filtered.isEmpty()) {
             Column(Modifier.fillMaxSize().padding(bottom = 80.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(painterResource(R.drawable.ic_fluent_clipboard_task_24_regular), null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(Modifier.height(18.dp))
-                Text(stringResource(if (selectedTag == null) R.string.empty_schedule_title else R.string.no_tasks_for_tag), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
+                Text(stringResource(if (selectedTag == null) R.string.empty_schedule_title else R.string.no_tasks_for_tag), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.empty_schedule_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(stringResource(R.string.empty_schedule_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(top = 10.dp, bottom = 90.dp)) {
@@ -309,24 +300,17 @@ private fun TaskOverview(
                             val completionDescription = stringResource(
                                 if (task.isCompleted) R.string.todo_uncheck_accessibility else R.string.todo_checkbox_accessibility, task.title,
                             )
-                            IconButton(
-                                onClick = { onTaskCompletedChanged(task, !task.isCompleted) },
+                            Checkbox(
+                                checked = task.isCompleted,
+                                onCheckedChange = { onTaskCompletedChanged(task, it) },
                                 modifier = Modifier.semantics { contentDescription = completionDescription },
-                            ) {
-                                Surface(
-                                    Modifier.size(18.dp), shape = CircleShape,
-                                    color = if (task.isCompleted) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    border = if (task.isCompleted) null else BorderStroke(1.3.dp, MaterialTheme.colorScheme.outline),
-                                ) {
-                                    if (task.isCompleted) Icon(painterResource(R.drawable.ic_planner_check), null, Modifier.padding(2.dp), tint = MaterialTheme.colorScheme.onPrimary)
-                                }
-                            }
+                            )
                             Column(Modifier.weight(1f).padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(task.title, fontSize = 16.sp, lineHeight = 23.sp, textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                                Text(task.title, style = MaterialTheme.typography.bodyLarge, textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
                                     color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
                                 Text(stringResource(if (task.isCompleted) R.string.task_done else if (task.date.isBefore(LocalDate.now())) R.string.task_overdue else R.string.task_todo),
-                                    fontSize = 12.sp, color = if (!task.isCompleted && task.date.isBefore(LocalDate.now())) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (task.details.isNotBlank()) Text(task.details, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    style = MaterialTheme.typography.labelMedium, color = if (!task.isCompleted && task.date.isBefore(LocalDate.now())) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (task.details.isNotBlank()) Text(task.details, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -339,12 +323,12 @@ private fun TaskOverview(
 @Composable
 private fun WeekdayHeader() {
     val locale = LocalConfiguration.current.locales[0]
-    Row(Modifier.fillMaxWidth().height(32.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp)) {
         (0..6).forEach { offset ->
             val day = DayOfWeek.SUNDAY.plus(offset.toLong())
             Text(day.getDisplayName(TextStyle.SHORT_STANDALONE, locale), Modifier.weight(1f).align(Alignment.CenterVertically),
                 color = if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp, textAlign = TextAlign.Center)
+                style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
         }
     }
 }
@@ -397,18 +381,21 @@ private fun DayCell(
         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
     ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val spacious = maxHeight >= 98.dp
-            Column(Modifier.fillMaxSize().padding(top = 6.dp, start = 2.dp, end = 2.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(25.dp).then(if (isToday) Modifier.background(MaterialTheme.colorScheme.primary, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
-                        Text(date.dayOfMonth.toString(), fontSize = 15.sp,
+            val spacious = maxHeight >= 128.dp * LocalDensity.current.fontScale
+            Column(Modifier.fillMaxSize().padding(top = 4.dp, start = 2.dp, end = 2.dp)) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.defaultMinSize(minWidth = 28.dp, minHeight = 28.dp)
+                        .then(if (isToday) Modifier.background(MaterialTheme.colorScheme.primary, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+                        Text(date.dayOfMonth.toString(), Modifier.padding(horizontal = 4.dp, vertical = 2.dp), style = MaterialTheme.typography.bodyMedium,
                             color = if (isToday) MaterialTheme.colorScheme.onPrimary else if (!isInMonth) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
                     }
-                    if (lunar != null) Text(lunar, Modifier.weight(1f), fontSize = 8.sp, maxLines = 1, overflow = TextOverflow.Clip, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (lunar != null) Text(lunar, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.height(3.dp))
-                content?.let { DayPreview(it, spacious) }
-                Spacer(Modifier.weight(1f))
+                Column(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
+                    content?.let { DayPreview(it, spacious) }
+                }
                 content?.stickers?.takeLast(2)?.let { stickers ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         stickers.forEach { sticker ->
@@ -432,7 +419,7 @@ private fun DayPreview(content: DayContent, spacious: Boolean) {
         Text(task.title, Modifier.fillMaxWidth().padding(bottom = 2.dp).clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.tertiaryContainer).padding(horizontal = 2.dp, vertical = 1.dp),
             fontSize = 10.sp, lineHeight = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            color = if (task.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
             textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null)
     }
     if (spacious || content.tasks.isEmpty()) {

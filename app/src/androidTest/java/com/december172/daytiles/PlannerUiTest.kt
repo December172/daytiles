@@ -55,10 +55,14 @@ class PlannerUiTest {
         }
         return find(selector)
     }
-    private fun openFeature(id: Int, rootTag: String? = null) {
+    private fun openHome() {
         // Launch through the shell so repeated task resets also work on physical devices.
         val launch = device.executeShellCommand("am start -W -f 0x10008000 -n ${context.packageName}/${MainActivity::class.java.name}")
         assertTrue(launch, launch.contains("Status: ok"))
+        find(By.desc(text(R.string.open_navigation_menu)))
+    }
+    private fun openFeature(id: Int, rootTag: String? = null) {
+        openHome()
         click(R.string.me_tab)
         scrollTo(By.text(text(id))).click()
         if (rootTag != null) find(By.res(rootTag))
@@ -78,6 +82,61 @@ class PlannerUiTest {
             repo.saveBudget(today, true, code, null)
         }
         app.settings.ledgerCurrency = originalCurrency
+    }
+
+    @Test fun primaryNavigationDrawerAndLunarSettingRemainUsable() {
+        openHome()
+        capture("material-calendar")
+        for ((label, name) in listOf(
+            R.string.schedule_tab to "tasks", R.string.target_tab to "goals",
+            R.string.widgets_tab to "widgets", R.string.me_tab to "more", R.string.view_tab to "calendar",
+        )) {
+            click(label)
+            find(By.selected(true).hasDescendant(By.text(text(label))))
+            capture("material-$name")
+        }
+        find(By.desc(text(R.string.open_navigation_menu))).click()
+        find(By.selected(true).hasDescendant(By.text(text(R.string.calendar_tab))))
+        capture("material-drawer")
+        click(R.string.week_title)
+        find(By.desc(text(R.string.back)))
+        device.pressBack()
+
+        val original = app.settings.showLunarDates.value
+        try {
+            openFeature(R.string.settings_title)
+            find(By.res("lunar-date-setting")).click()
+            await { app.settings.showLunarDates.value == !original }
+            find(By.res("lunar-date-setting").checked(!original))
+            capture("material-settings")
+            // Re-enter the screen to verify the toggle's persisted state.
+            openFeature(R.string.settings_title)
+            find(By.res("lunar-date-setting").checked(!original))
+        } finally {
+            app.settings.setShowLunarDates(original)
+        }
+    }
+
+    @Test fun quickEntryWithKeyboardAndTaskCheckboxSaveChanges() = runBlocking<Unit> {
+        openHome()
+        find(By.desc(text(R.string.new_task))).click()
+        find(By.res("quick-task-save").enabled(false))
+        find(By.res("quick-task-title")).text = "Material quick entry"
+        find(By.res("quick-task-details")).text = "Details entered with the keyboard visible"
+        scrollTo(By.res("quick-task-save").enabled(true))
+        capture("material-quick-entry")
+        find(By.res("quick-task-save").enabled(true)).click()
+        await { runBlocking { repo.observeAllTasks().first().any { it.title == "Material quick entry" } } }
+        val task = repo.observeAllTasks().first().single { it.title == "Material quick entry" }
+        tasks += task.id
+        assertEquals("Details entered with the keyboard visible", task.details)
+        assertTrue(device.wait(Until.gone(By.res("quick-task-save")), 5_000))
+        click(R.string.schedule_tab)
+        find(By.text(task.title))
+        find(By.desc(context.getString(R.string.todo_checkbox_accessibility, task.title))).click()
+        await { runBlocking { db.taskDao().findById(task.id)?.isCompleted == true } }
+        capture("material-completed-task")
+        find(By.desc(context.getString(R.string.todo_uncheck_accessibility, task.title)))
     }
 
     @Test fun timelineCompletionDeleteRecoverAndPermanentRemoval() = runBlocking<Unit> {
@@ -236,6 +295,19 @@ class PlannerUiTest {
     /** Crop on Android before exporting, so no personal/system chrome is included. */
     private fun capture(name: String) {
         instrumentation.waitForIdleSync()
+        // Compose navigation can keep drawing after accessibility reports the next page.
+        // Wait for consecutive matching frames before saving a visual reference.
+        var frame = requireNotNull(device.takeScreenshot())
+        var matchingFrames = 0
+        val deadline = SystemClock.uptimeMillis() + 3_000
+        while (matchingFrames < 2 && SystemClock.uptimeMillis() < deadline) {
+            SystemClock.sleep(120)
+            val next = requireNotNull(device.takeScreenshot())
+            matchingFrames = if (frame.sameAs(next)) matchingFrames + 1 else 0
+            frame.recycle()
+            frame = next
+        }
+        frame.recycle()
         val folder = requireNotNull(context.getExternalFilesDir("feature-screenshots"))
         folder.mkdirs()
         val original = File(folder, "$name-raw.png")

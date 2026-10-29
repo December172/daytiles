@@ -118,7 +118,7 @@
     <string-array name="widget_weekdays">
         <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
     </string-array>
-    <string name="schedule_tab">Schedule</string>
+    <string name="schedule_tab">Tasks</string>
     <string name="view_tab">View</string>
     <string name="target_tab">Target</string>
     <string name="widgets_tab">Widget</string>

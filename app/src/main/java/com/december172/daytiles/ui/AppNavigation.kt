@@ -15,22 +15,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.sp
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import com.december172.daytiles.ui.planner.MoreScreen
 import com.december172.daytiles.ui.planner.WidgetsScreen
 import com.december172.daytiles.ui.planner.FullScheduleScreen
 import com.december172.daytiles.ui.planner.RecycleBinScreen
 import com.december172.daytiles.ui.planner.BudgetScreen
-import androidx.compose.foundation.layout.width
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -90,39 +83,30 @@ fun AppNavigation(initialDate: LocalDate? = null, openJournal: Boolean = false) 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(304.dp), drawerContainerColor = MaterialTheme.colorScheme.surface) {
+            ModalDrawerSheet(modifier = Modifier.widthIn(max = 360.dp)) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                     Text(stringResource(R.string.app_name), Modifier.padding(start = 24.dp, top = 24.dp), style = MaterialTheme.typography.headlineSmall)
                     Text(stringResource(R.string.local_notebook), Modifier.padding(start = 24.dp, top = 4.dp, bottom = 24.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        listOf("calendar", "week", "tasks").map { route -> destinations.first { it.route == route } }.forEach { destination ->
-                            Column(Modifier.weight(1f).clickable { openDestination(destination.route) }.padding(vertical = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(Modifier.size(38.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape), contentAlignment = Alignment.Center) {
-                                    Icon(painterResource(destination.icon), null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.secondary)
-                                }
-                                Text(stringResource(destination.label), fontSize = 11.sp, maxLines = 1)
-                            }
-                        }
+                    destinations.filter { it.route in listOf("calendar", "tasks", "week") }.forEach { destination ->
+                        NavigationDrawerItem(
+                            label = { Text(stringResource(destination.label)) },
+                            icon = { Icon(painterResource(destination.icon), null, Modifier.size(24.dp)) },
+                            selected = currentRoute == destination.route,
+                            onClick = { openDestination(destination.route) },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+                        )
                     }
                     HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
                     Text(stringResource(R.string.planner_tools), Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     destinations.filter { it.route !in listOf("calendar", "week", "tasks", "settings", "help") }.forEach { destination ->
                         NavigationDrawerItem(
-                            label = { Text(stringResource(destination.label), fontSize = 15.sp) },
-                            icon = { Icon(painterResource(destination.icon), null, Modifier.size(22.dp)) },
+                            label = { Text(stringResource(destination.label)) },
+                            icon = { Icon(painterResource(destination.icon), null, Modifier.size(24.dp)) },
                             selected = currentRoute == destination.route,
                             onClick = { openDestination(destination.route) },
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                            colors = NavigationDrawerItemDefaults.colors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                            ),
-                            modifier = Modifier.padding(horizontal = 12.dp).height(48.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                         )
                     }
                 }

@@ -6,11 +6,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -20,14 +18,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.december172.daytiles.R
 import java.time.LocalDate
@@ -63,26 +62,22 @@ fun TaskQuickEntryPopup(date: LocalDate, onDismiss: () -> Unit) {
     }
     val notificationPermission = rememberLauncherForActivityResult(RequestPermission()) { granted -> save(if (granted) reminderAt else null) }
     LaunchedEffect(Unit) { focus.requestFocus(); keyboard?.show() }
-    Box(Modifier.fillMaxSize().imePadding()) {
+    Box(Modifier.fillMaxSize().imePadding().semantics { testTagsAsResourceId = true }) {
         Box(Modifier.matchParentSize().clickable(enabled = !saving, onClick = onDismiss))
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding()) {
-            Text(
-                date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)),
-                Modifier.padding(start = 20.dp, bottom = 10.dp).background(Color(0xFF333333), RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 4.dp), color = Color.White, fontSize = 14.sp,
-            )
-            Surface(shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), color = MaterialTheme.colorScheme.surface) {
-                Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState()).padding(12.dp)) {
-                    val colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-                    )
-                    TextField(title, { title = it }, Modifier.fillMaxWidth().focusRequester(focus),
-                        placeholder = { Text(stringResource(R.string.add_task_placeholder), fontSize = 18.sp) },
-                        colors = colors, maxLines = 3, enabled = !saving)
-                    TextField(details, { details = it }, Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.task_details)) }, colors = colors, maxLines = 4, enabled = !saving)
+            Surface(shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Column(Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()).padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.new_task), style = MaterialTheme.typography.titleLarge)
+                    Text(date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)),
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth().focusRequester(focus).testTag("quick-task-title"),
+                        label = { Text(stringResource(R.string.add_task_placeholder)) },
+                        maxLines = 3, enabled = !saving)
+                    OutlinedTextField(details, { details = it }, Modifier.fillMaxWidth().testTag("quick-task-details"),
+                        label = { Text(stringResource(R.string.task_details)) }, maxLines = 4, enabled = !saving)
                     if (showTags) {
-                        OutlinedTextField(tags, { tags = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                        OutlinedTextField(tags, { tags = it }, Modifier.fillMaxWidth(),
                             label = { Text(stringResource(R.string.task_tags)) }, singleLine = true,
                             supportingText = { Text(stringResource(R.string.task_tags_hint)) })
                     }
@@ -127,15 +122,17 @@ fun TaskQuickEntryPopup(date: LocalDate, onDismiss: () -> Unit) {
                             Icon(painterResource(R.drawable.ic_fluent_tag_24_regular), stringResource(R.string.task_tags), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Spacer(Modifier.weight(1f))
-                        FilledIconButton(
+                        Button(
                             onClick = {
                                 if (reminderAt != null && Build.VERSION.SDK_INT >= 33 &&
                                     context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                                     notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 } else save(reminderAt)
-                            }, enabled = title.isNotBlank() && !saving, shape = CircleShape,
+                            }, enabled = title.isNotBlank() && !saving, modifier = Modifier.testTag("quick-task-save"),
                         ) {
-                            Icon(painterResource(R.drawable.ic_planner_check), stringResource(R.string.save))
+                            Icon(painterResource(R.drawable.ic_planner_check), null, Modifier.size(ButtonDefaults.IconSize))
+                            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                            Text(stringResource(R.string.save))
                         }
                     }
                 }

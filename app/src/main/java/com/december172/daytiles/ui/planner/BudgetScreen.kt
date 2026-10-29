@@ -185,7 +185,8 @@ fun BudgetScreen(onBack: () -> Unit) {
 
 @Composable
 private fun BudgetSummary(monthly: Boolean, spent: Long, budget: BudgetEntity?, currency: String, locale: Locale, onEdit: () -> Unit) {
-    OutlinedCard(Modifier.fillMaxWidth().testTag(if (monthly) "monthly-summary" else "daily-summary")) {
+    Card(Modifier.fillMaxWidth().testTag(if (monthly) "monthly-summary" else "daily-summary"),
+        colors = CardDefaults.cardColors(containerColor = if (monthly) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(if (monthly) R.string.month_spending else R.string.day_spending), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
@@ -193,7 +194,7 @@ private fun BudgetSummary(monthly: Boolean, spent: Long, budget: BudgetEntity?, 
                     Text(stringResource(if (budget == null) R.string.set_budget else R.string.edit_budget))
                 }
             }
-            Text(Money.format(spent, currency, locale), style = MaterialTheme.typography.headlineSmall)
+            Text(Money.format(spent, currency, locale), style = MaterialTheme.typography.headlineMedium)
             if (budget == null) Text(stringResource(R.string.no_budget), style = MaterialTheme.typography.bodySmall)
             else {
                 val remaining = budget.amountMinor - spent

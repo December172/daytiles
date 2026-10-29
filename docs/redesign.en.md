@@ -6,7 +6,35 @@ DayTiles now follows the main layout of the installed reference app,
 `com.zjzy.calendartime`. The implementation uses native Compose components,
 DayTiles icons, and the existing local repository.
 
-## Included
+## Material 3 refinement — 2026-10-29
+
+The five primary destinations and orange identity are retained, with [Material 3 color, shape, and typography roles](https://developer.android.com/develop/ui/compose/designsystems/material3):
+
+- The bottom bar uses `NavigationBar` / `NavigationBarItem`, app bars use standard heights, and the drawer uses full `NavigationDrawerItem` rows with selection indicators.
+- Light and dark themes define paired content/container colors and consistent surface levels for cards, panels, and buttons. The previous low-contrast gray supporting text is replaced.
+- Task filters and completion use `FilterChip` and `Checkbox`, with standard floating action buttons. Tools, goals, and budgets use Material cards; settings use a scrollable list.
+- Quick task entry uses labeled fields and a text Save button, retaining tags, priority, reminders, and scrolling with the keyboard visible.
+- The calendar continues to fill the available height. Dates and lunar labels occupy separate lines. Today markers grow with their text, and previews adapt to available height and font scale while remaining inside their date cells.
+
+This refinement changes UI, test configuration, and UI regression tests; the Room schema and data models are unchanged.
+
+`assembleDebug`, `assembleDebugAndroidTest`, and `lintDebug` passed. All **34 tests** passed on a disposable, read-only Android API 37 emulator, covering existing unit, repository, migration, localization, schedule, and finance checks, plus new primary navigation, drawer, lunar-setting, and quick-entry flows. Kotlin compilation has no warnings. Lint has no errors and retains two existing Gradle/Compose compiler update advisories. Those runtime checks ran on the emulator.
+
+The two new UI cases also passed in four configurations: Simplified Chinese/light, Hong Kong Traditional Chinese/dark, Taiwan Traditional Chinese/dark with 1.5× text, and English at 320 dp width with 1.3× text, totaling eight additional checks. Bottom navigation labels allow two lines for narrow screens and larger text; after that adjustment, all 34 tests passed again in the compact English configuration. The English task destination uses the shorter label “Tasks” to avoid breaking a word across lines.
+
+Screenshots intended for documentation wait for page transitions to settle and are cropped inside the emulator before export.
+
+### Physical-device verification — 2026-10-29
+
+The connected vivo V2425A (Android 16 / API 36) passed all **34 tests** in both English/light and Simplified Chinese/dark, taking 118.553 and 122.408 seconds, with no failures. Automation used the same application sources with the isolated ID `com.december172.daytiles.materialtest`, protecting the original app from recycle-bin and budget test cleanup. The dark override applied only to the test copy.
+
+After updating the original app in place, navigation checks passed for the calendar, full schedule, finance, recycle bin, and settings. Read-only, on-device comparisons confirmed identical fields, row counts, and row hashes across all nine entity tables, together with identical user-file and preference hashes. SQLite integrity passed and the schema remained at version 9. Only hashes and counts were returned; original user records and files were not exported.
+
+Two Gradle `srcDir` deprecation warnings found by the isolated build were removed with `directories.add`. Both application IDs rebuilt successfully without Kotlin or Gradle compilation warnings. The phone's existing wait-for-debugger setting was temporarily cleared for verification and restored afterward; temporary test and probe apps were removed. Home-screen widget pinning was not tested on vivo, as previously requested.
+
+The sections below preserve the reference milestone's historical behavior and verification results.
+
+## Reference appearance changes (historical)
 
 - White surfaces, orange actions, light separators, blue task filters, and compact centered toolbars; a corresponding dark palette.
 - Five primary destinations: Schedule, View, Target, Widget, and Me. The drawer and Me keep the focus clock, tags, priority matrix, week view, and course tools accessible.

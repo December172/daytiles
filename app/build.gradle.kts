@@ -45,8 +45,8 @@ android {
 
     sourceSets.getByName("androidTest") {
         // Run the same pure unit tests on Android as well as the repository/UI tests.
-        kotlin.srcDir("src/test/java")
-        assets.srcDir("schemas")
+        kotlin.directories.add("src/test/java")
+        assets.directories.add("schemas")
     }
 }
 

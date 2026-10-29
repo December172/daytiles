@@ -46,7 +46,7 @@ verification, and remaining visual differences.
 - Day editor popup focused on journal text and sticker management; add/remove stickers independently of task workflows
 - Built-in emoji stickers, custom emoji input, local PNG/WebP imports, and optional HTTPS PNG/WebP downloads
 - Reusable sticker library with date-specific sticker placements and calendar-cell previews
-- Schedule, View, Target, Widget, and Me bottom navigation, including a date-grouped task list with circular completion controls
+- Material 3 Tasks, View, Target, Widget, and Me bottom navigation, including a date-grouped task list with completion checkboxes
 - Grouped local planning tools and an in-app widget catalogue with confirmed placement feedback, retry, and manual-add instructions
 - Side navigation for calendar, tasks, tags, goals, priority matrix, week view, course timetable, focus clock, settings, and help
 - Week-at-a-glance screen showing tasks and journal snippets
