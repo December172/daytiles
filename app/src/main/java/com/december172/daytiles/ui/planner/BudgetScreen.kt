@@ -78,6 +78,7 @@ fun BudgetScreen(onBack: () -> Unit) {
     var dateEpoch by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
     var monthly by rememberSaveable { mutableStateOf(false) }
     var currencyMenu by remember { mutableStateOf(false) }
+    var converting by rememberSaveable { mutableStateOf(false) }
     var monthPicker by rememberSaveable { mutableStateOf(false) }
     var showEditor by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -143,6 +144,9 @@ fun BudgetScreen(onBack: () -> Unit) {
                     Icon(painterResource(R.drawable.ic_planner_chevron_right), stringResource(R.string.next_period))
                 }
             }
+            TextButton(onClick = { converting = true }, modifier = Modifier.testTag("open-exchange")) {
+                Text(stringResource(R.string.exchange_title))
+            }
             Text(stringResource(R.string.finance_currency_hint), Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             // Give every currency/month its own collected state; never flash another ledger's totals.
@@ -201,6 +205,8 @@ fun BudgetScreen(onBack: () -> Unit) {
             }
         }
     }
+    if (converting) ExchangeRateDialog(app.exchangeRates, currency,
+        if (currency == "CNY") "USD" else "CNY", onClose = { converting = false })
     if (monthPicker) MonthPicker(month, onDismiss = { monthPicker = false }, onSelect = { chosen ->
         dateEpoch = chosen.atDay(minOf(date.dayOfMonth, chosen.lengthOfMonth())).toEpochDay(); monthPicker = false
     })
@@ -297,6 +303,7 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
     var dateEpoch by rememberSaveable(expense?.id) { mutableLongStateOf((expense?.date ?: selectedDate).toEpochDay()) }
     var categories by remember { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
+    var converting by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val date = LocalDate.ofEpochDay(dateEpoch)
@@ -315,6 +322,9 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
                     label = { Text(stringResource(R.string.amount_currency, currency)) }, singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = amount.isNotBlank() && parsed == null,
                     supportingText = { Text(stringResource(R.string.expense_amount_hint)) })
+                TextButton(enabled = !busy, onClick = { converting = true }, modifier = Modifier.testTag("expense-convert")) {
+                    Text(stringResource(R.string.exchange_title))
+                }
                 OutlinedButton(enabled = !busy, onClick = {
                     DatePickerDialog(context, { _, y, m, d -> dateEpoch = LocalDate.of(y, m + 1, d).toEpochDay() }, date.year, date.monthValue - 1, date.dayOfMonth).show()
                 }, modifier = Modifier.fillMaxWidth().testTag("expense-date")) {
@@ -337,6 +347,10 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
                 }
             }
         }
+        if (converting) ExchangeRateDialog(
+            (context.applicationContext as DayTilesApplication).exchangeRates,
+            if (currency == "USD") "CNY" else "USD", currency,
+            onClose = { converting = false }, onUseAmount = { amount = Money.input(it); converting = false })
         if (deleting) AlertDialog(onDismissRequest = { if (!busy) deleting = false },
             title = { Text(stringResource(R.string.delete_expense)) }, text = { Text(stringResource(R.string.delete_expense_confirmation)) },
             confirmButton = { TextButton(enabled = !busy, onClick = onDelete) { Text(stringResource(R.string.delete)) } },

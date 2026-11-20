@@ -9,6 +9,7 @@
 | 功能、使用与构建 | [项目首页](../README.md) | [README](../README.en.md) |
 | 外观改版与历史验证 | [改版记录](redesign.md) | [Redesign](redesign.en.md) |
 | 全部日程、回收站和记账预算 | [功能与验证](planner-finance.md) | [Features and verification](planner-finance.en.md) |
+| 无需配置的官方汇率、来源与离线缓存 | [汇率接入说明](exchange-rates.md) | [Exchange rate integration](exchange-rates.en.md) |
 | 开发规则 | [项目约定](../AGENTS.md) | [Development rules](../AGENTS.en.md) |
 | 贡献者 | [贡献说明](../CONTRIBUTORS.md) | [Contributors](../CONTRIBUTORS.en.md) |
 | 第三方许可 | [许可说明](../THIRD_PARTY_LICENSES.md) | [Third-party licenses](../THIRD_PARTY_LICENSES.en.md) |

@@ -81,6 +81,8 @@ Open **Expenses & budgets** from the drawer or Me. Record a description, date, a
 
 Set independent daily and monthly budgets, including a zero-spending budget. The summary shows the amount spent, the budget, and the remaining amount or overrun. Removing a budget keeps its expense records. Currency selection keeps CNY, HKD, TWD, and USD records and budgets separate; changing currency does not convert or relabel existing amounts.
 
+The currency converter on this screen and in the expense editor works without setup. It automatically loads free public reference rates from CFETS and HKMA, caches them for offline use, and can fill the current expense amount. See [exchange rate integration](docs/exchange-rates.en.md) for source dates and publication limits.
+
 ### Task organization
 
 - **Subtasks** — ordered, checkable child tasks with completion state and parent progress. Existing tasks are preserved through Room migrations.
@@ -143,7 +145,7 @@ app/src/main/java/com/december172/daytiles/
 
 ## Privacy and connectivity
 
-DayTiles works offline. Internet access is used only when the user explicitly downloads a sticker from a URL; downloaded stickers are kept in private local storage. There are no accounts, advertisements, analytics, tracking, cloud services, or backend dependency.
+DayTiles works offline. Internet access is used for sticker downloads, loading missing exchange rates or snapshots downloaded at least 24 hours ago when opening the converter, and manual rate refresh. Stickers and cached quotes stay on the device. Rate requests use fixed public official URLs and send no entered amounts or notes; no account or API key is needed. There are no required app accounts, advertisements, analytics, tracking, or cloud sync.
 
 ## Credits
 

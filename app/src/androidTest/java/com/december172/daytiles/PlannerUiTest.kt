@@ -392,6 +392,58 @@ class PlannerUiTest {
         await { app.settings.ledgerCurrency == code }
     }
 
+    @Test fun currencyConverterWorksOfflineAndAppliesOnlyToTheEditedExpense() = runBlocking<Unit> {
+        val rates = app.exchangeRates
+        val preferences = context.getSharedPreferences("official_exchange_rates", android.content.Context.MODE_PRIVATE)
+        val originalRates = preferences.all.mapValues { it.value as String }
+        try {
+            rates.clearCachedRates()
+            val fixtureRepo = com.december172.daytiles.data.ExchangeRateRepository(context,
+                com.december172.daytiles.data.ExchangeRateClient { source ->
+                    com.december172.daytiles.data.ExchangeRateTable(source, "2026-11-20 09:15", System.currentTimeMillis(),
+                        mapOf("CNY" to java.math.BigDecimal.ONE, "USD" to java.math.BigDecimal("7.25"), "HKD" to java.math.BigDecimal("0.9")))
+                })
+            fixtureRepo.refresh("CNY", "USD")
+            app.settings.ledgerCurrency = "CNY"
+            openFeature(R.string.finance_title, "expense-list")
+            find(By.res("open-exchange")).click()
+            find(By.res("exchange-screen"))
+            find(By.res("exchange-refresh").enabled(true))
+            setText("exchange-amount", "10.00")
+            find(By.res("exchange-result").text(Money.format(138, "USD", context.resources.configuration.locales[0])))
+            if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
+            scrollTo(By.res("exchange-rate"))
+            capture("exchange-cached-fixture")
+            find(By.desc(text(R.string.back))).click()
+            find(By.res("add-expense")).click()
+            setText("expense-title", "Converted fixture expense")
+            if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
+            scrollTo(By.res("expense-convert")).click()
+            assertFalse(find(By.res("exchange-to")).isEnabled)
+            setText("exchange-amount", "12.34")
+            if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
+            scrollTo(By.res("exchange-use-amount")).click()
+            find(By.res("expense-amount").text("89.47"))
+            find(By.res("save-expense").enabled(true)).click()
+            await { runBlocking { repo.observeExpenses(YearMonth.from(today), "CNY").first().any { it.title == "Converted fixture expense" } } }
+            val saved = repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.title == "Converted fixture expense" }
+            expenses += saved.id
+            assertEquals(8947L, saved.amountMinor)
+            assertEquals("CNY", saved.currency)
+            // Reopen with the persistent cache and clear it from the UI.
+            find(By.res("open-exchange")).click()
+            scrollTo(By.res("exchange-clear-cache")).click()
+            find(By.res("exchange-no-rate"))
+            assertNull(rates.cachedRate("CNY", "USD"))
+            assertNull(rates.cachedRate("USD", "CNY"))
+            find(By.desc(text(R.string.back))).click()
+        } finally {
+            preferences.edit().clear().apply {
+                originalRates.forEach { (key, value) -> putString(key, value) }
+            }.commit()
+        }
+    }
+
     private fun budget(tag: String, value: String) {
         scrollTo(By.res(tag), "expense-list").click()
         setText("budget-amount", value)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exchange_title">Currency converter</string>
+    <string name="exchange_provider">Free official reference rates</string>
+    <string name="exchange_privacy">Rates load automatically from public official sources. No account or API key needed. Your amounts and notes stay on this device.</string>
+    <string name="exchange_provider_link">View official source</string>
+    <string name="exchange_source_cfets">Source: China Foreign Exchange Trade System (CFETS)</string>
+    <string name="exchange_source_hkma">Source: Hong Kong Monetary Authority (HKMA)</string>
+    <string name="exchange_from">From: %1$s</string>
+    <string name="exchange_to">To: %1$s</string>
+    <string name="exchange_updated">Observation: %1$s (source local date/time)</string>
+    <string name="exchange_cached">Downloaded: %1$s. Saved rates work offline.</string>
+    <string name="exchange_same_currency">Same currency; no online rate needed.</string>
+    <string name="exchange_amount_too_large">The converted amount exceeds the supported limit.</string>
+    <string name="exchange_no_rate">No saved rate for this pair. Connect to the internet and tap Refresh.</string>
+    <string name="exchange_refresh_failed">Could not refresh official rates. Check your connection and try again. Any saved rate is still available.</string>
+    <string name="exchange_refresh">Refresh rates</string>
+    <string name="exchange_refreshing">Loading official rates…</string>
+    <string name="exchange_use_amount">Use converted amount</string>
+    <string name="exchange_reference_hint">Reference estimate only. Official publication can lag, especially HKMA bulletin data; check the observation date. Bank/card rates and fees may differ. Existing records and budgets keep their currency.</string>
+    <string name="exchange_clear_cache">Clear saved rates</string>
+</resources>

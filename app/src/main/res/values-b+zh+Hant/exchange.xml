@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exchange_title">匯率換算</string>
+    <string name="exchange_provider">免費官方參考匯率</string>
+    <string name="exchange_privacy">自動從公開官方來源取得匯率，無需帳戶或 API 金鑰。你的金額與備註保留在本機。</string>
+    <string name="exchange_provider_link">查看官方來源</string>
+    <string name="exchange_source_cfets">來源：中國外匯交易中心（CFETS）</string>
+    <string name="exchange_source_hkma">來源：香港金融管理局（HKMA）</string>
+    <string name="exchange_from">原幣別：%1$s</string>
+    <string name="exchange_to">目標幣別：%1$s</string>
+    <string name="exchange_updated">資料日期：%1$s（來源當地日期/時間）</string>
+    <string name="exchange_cached">下載時間：%1$s。已儲存匯率可離線使用。</string>
+    <string name="exchange_same_currency">幣別相同，無需連線取得匯率。</string>
+    <string name="exchange_amount_too_large">換算結果超出支援的金額範圍。</string>
+    <string name="exchange_no_rate">此幣別組合尚無已儲存匯率，請連線後點選重新整理。</string>
+    <string name="exchange_refresh_failed">無法重新整理官方匯率，請檢查網絡後再試。已儲存匯率仍可使用。</string>
+    <string name="exchange_refresh">重新整理匯率</string>
+    <string name="exchange_refreshing">正在取得官方匯率…</string>
+    <string name="exchange_use_amount">使用換算金額</string>
+    <string name="exchange_reference_hint">僅供估算參考。官方發布可能滯後，尤其是香港金管局月報資料，請核對資料日期。銀行、銀行卡匯率及手續費可能不同；已有記錄和預算仍保留原幣別。</string>
+    <string name="exchange_clear_cache">清除已儲存匯率</string>
+</resources>
