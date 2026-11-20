@@ -1,11 +1,14 @@
 package com.december172.daytiles.ui.planner
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,11 +16,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,6 +53,21 @@ private val expenseCategories = linkedMapOf(
     "health" to R.string.category_health, "learning" to R.string.category_learning,
     "leisure" to R.string.category_leisure, "other" to R.string.category_other,
 )
+
+private val expenseCategoryColors = mapOf(
+    "food" to Color(0xFFD55E00), "transport" to Color(0xFF0072B2),
+    "shopping" to Color(0xFF7E57C2), "housing" to Color(0xFF009E73),
+    "health" to Color(0xFFC75B9B), "learning" to Color(0xFF008C9E),
+    "leisure" to Color(0xFFC28B00), "other" to Color(0xFF7A7A7A),
+)
+
+private fun expenseCategoryColor(category: String): Color =
+    expenseCategoryColors.getValue(category.takeIf { it in expenseCategoryColors } ?: "other")
+
+@Composable
+private fun ExpenseCategoryDot(category: String) {
+    Box(Modifier.size(10.dp).background(expenseCategoryColor(category), CircleShape))
+}
 
 @Composable
 fun BudgetScreen(onBack: () -> Unit) {
@@ -134,12 +156,12 @@ fun BudgetScreen(onBack: () -> Unit) {
                 LazyColumn(Modifier.weight(1f).testTag("expense-list"), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (!monthly) item {
-                        BudgetSummary(false, dayExpenses.sumOf { it.amountMinor }, dayBudget, currency, locale) {
+                        BudgetSummary(false, dayExpenses, dayBudget, currency, locale) {
                             failed = false; budgetMonthly = false
                         }
                     }
                     item {
-                        BudgetSummary(true, expenses.sumOf { it.amountMinor }, monthBudget, currency, locale) {
+                        BudgetSummary(true, expenses, monthBudget, currency, locale) {
                             failed = false; budgetMonthly = true
                         }
                     }
@@ -154,6 +176,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                                 editingId = expense.id; failed = false; showEditor = true
                             }) {
                                 ListItem(headlineContent = { Text(expense.title) },
+                                    leadingContent = { ExpenseCategoryDot(expense.category) },
                                     supportingContent = { Text(stringResource(expenseCategories[expense.category] ?: R.string.category_other)) },
                                     trailingContent = { Text(Money.format(expense.amountMinor, currency, locale), style = MaterialTheme.typography.titleSmall) })
                             }
@@ -184,7 +207,10 @@ fun BudgetScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun BudgetSummary(monthly: Boolean, spent: Long, budget: BudgetEntity?, currency: String, locale: Locale, onEdit: () -> Unit) {
+private fun BudgetSummary(monthly: Boolean, expenses: List<ExpenseEntity>, budget: BudgetEntity?, currency: String, locale: Locale, onEdit: () -> Unit) {
+    val spent = expenses.sumOf { it.amountMinor }
+    val categoryTotals = expenses.groupBy { it.category.takeIf(expenseCategories::containsKey) ?: "other" }
+        .mapValues { (_, records) -> records.sumOf { it.amountMinor } }
     Card(Modifier.fillMaxWidth().testTag(if (monthly) "monthly-summary" else "daily-summary"),
         colors = CardDefaults.cardColors(containerColor = if (monthly) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -199,10 +225,33 @@ private fun BudgetSummary(monthly: Boolean, spent: Long, budget: BudgetEntity?, 
             else {
                 val remaining = budget.amountMinor - spent
                 Text(stringResource(R.string.budget_amount_value, Money.format(budget.amountMinor, currency, locale)), style = MaterialTheme.typography.bodySmall)
-                LinearProgressIndicator(progress = {
-                    if (budget.amountMinor == 0L) { if (spent == 0L) 0f else 1f }
-                    else (spent.toFloat() / budget.amountMinor).coerceIn(0f, 1f)
-                }, modifier = Modifier.fillMaxWidth(), color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                val barTotal = maxOf(budget.amountMinor, spent)
+                val progress = if (barTotal == 0L) 0f else (spent.toDouble() / barTotal).toFloat()
+                Row(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .testTag(if (monthly) "monthly-budget-bar" else "daily-budget-bar")
+                    .semantics { progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f) }) {
+                    // Scale an overspent bar to total spending so every category remains visible.
+                    if (barTotal > 0L) {
+                        expenseCategories.keys.forEach { category ->
+                            val amount = categoryTotals[category] ?: 0L
+                            if (amount > 0L) Box(Modifier.weight((amount.toDouble() / barTotal).toFloat())
+                                .fillMaxHeight().background(expenseCategoryColor(category)))
+                        }
+                        if (remaining > 0L) Spacer(Modifier.weight((remaining.toDouble() / barTotal).toFloat()))
+                    }
+                }
+                expenseCategories.forEach { (category, label) ->
+                    categoryTotals[category]?.let { amount ->
+                        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ExpenseCategoryDot(category)
+                            Text(stringResource(label), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                            Text(Money.format(amount, currency, locale), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
                 Text(stringResource(if (remaining < 0) R.string.budget_over else R.string.budget_left,
                     Money.format(kotlin.math.abs(remaining), currency, locale)),
                     color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,

@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
@@ -44,6 +45,15 @@ class PlannerUiTest {
         while (!condition()) {
             if (SystemClock.uptimeMillis() > deadline) fail("Timed out waiting for persisted state")
             SystemClock.sleep(30)
+        }
+    }
+    private fun setText(tag: String, value: String) {
+        // Dialog and keyboard transitions can replace an accessibility node after lookup.
+        await {
+            try {
+                find(By.res(tag)).text = value
+                true
+            } catch (_: StaleObjectException) { false }
         }
     }
     private fun scrollTo(selector: BySelector, listTag: String? = null): UiObject2 {
@@ -121,8 +131,8 @@ class PlannerUiTest {
         openHome()
         find(By.desc(text(R.string.new_task))).click()
         find(By.res("quick-task-save").enabled(false))
-        find(By.res("quick-task-title")).text = "Material quick entry"
-        find(By.res("quick-task-details")).text = "Details entered with the keyboard visible"
+        setText("quick-task-title", "Material quick entry")
+        setText("quick-task-details", "Details entered with the keyboard visible")
         scrollTo(By.res("quick-task-save").enabled(true))
         capture("material-quick-entry")
         find(By.res("quick-task-save").enabled(true)).click()
@@ -221,8 +231,8 @@ class PlannerUiTest {
         scrollTo(By.text("UI another date"), "expense-list")
         capture("monthly-budget")
         scrollTo(By.text("UI lunch"), "expense-list").click()
-        find(By.res("expense-amount")).text = "13.25"
-        find(By.res("expense-note")).text = "Updated note"
+        setText("expense-amount", "13.25")
+        setText("expense-note", "Updated note")
         find(By.res("save-expense").enabled(true)).click()
         await { runBlocking { db.financeDao().findExpense(id)?.amountMinor == 1325L } }
         device.wait(Until.gone(By.res("save-expense")), 10_000)
@@ -249,13 +259,12 @@ class PlannerUiTest {
         currency("CNY")
         budget("edit-day-budget", "0")
         find(By.res("add-expense")).click()
-        find(By.res("expense-title")).text = "UI invalid expense"
-        val field = find(By.res("expense-amount"))
+        setText("expense-title", "UI invalid expense")
         for (invalid in listOf("0", "-1", "12.345")) {
-            field.text = invalid
+            setText("expense-amount", invalid)
             assertTrue(device.wait(Until.hasObject(By.res("save-expense").enabled(false)), 5_000))
         }
-        field.text = "0.01"
+        setText("expense-amount", "0.01")
         find(By.res("save-expense").enabled(true)).click()
         await { runBlocking { repo.observeExpenses(YearMonth.from(today), "CNY").first().any { it.title == "UI invalid expense" } } }
         val id = repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.title == "UI invalid expense" }.id
@@ -265,6 +274,72 @@ class PlannerUiTest {
         scrollTo(By.res("edit-day-budget"), "expense-list").click()
         click(R.string.remove_budget)
         await { runBlocking { repo.observeBudgets(YearMonth.from(today), "CNY").first().none { it.periodType == "DAY" } } }
+    }
+
+    @Test fun budgetBarsShowCategoryColorsAndProportions() = runBlocking<Unit> {
+        val categories = listOf("food", "transport", "shopping", "housing", "health", "learning", "leisure", "other")
+        val amounts = categories.indices.map { (it + 1) * 1000L }
+        val total = amounts.sum()
+        categories.zip(amounts).forEach { (category, amount) ->
+            expenses += repo.saveExpense(null, today, "UI $category", amount, "CNY", category, "")
+        }
+        val anotherDay = today.withDayOfMonth(if (today.dayOfMonth > 1) today.dayOfMonth - 1 else 2)
+        expenses += repo.saveExpense(null, anotherDay, "UI another day", total, "CNY", "food", "")
+        repo.saveBudget(today, false, "CNY", total * 2)
+        repo.saveBudget(today, true, "CNY", total * 4)
+        openFeature(R.string.finance_title, "expense-list")
+        currency("CNY")
+        assertBudgetBar("daily-budget-bar", amounts, total * 2, "category-budget-daily")
+
+        click(R.string.finance_monthly)
+        assertTrue(device.wait(Until.gone(By.res("daily-summary")), 5_000))
+        val monthAmounts = amounts.toMutableList().apply { this[0] += total }
+        assertBudgetBar("monthly-budget-bar", monthAmounts, total * 4, "category-budget-monthly")
+
+        // Overspending and a zero budget must retain every category's share.
+        repo.saveBudget(today, true, "CNY", total)
+        find(By.textStartsWith(context.getString(R.string.budget_over, "")))
+        assertBudgetBar("monthly-budget-bar", monthAmounts, total * 2, "category-budget-over")
+        repo.saveBudget(today, true, "CNY", 0)
+        assertTrue(device.wait(Until.hasObject(By.text(context.getString(R.string.budget_amount_value,
+            com.december172.daytiles.domain.model.Money.format(0, "CNY", context.resources.configuration.locales[0])))), 5_000))
+        assertBudgetBar("monthly-budget-bar", monthAmounts, total * 2, "category-budget-zero")
+
+        expenses.forEach { repo.deleteExpense(it) }
+        find(By.text(text(R.string.no_expenses)))
+        assertBudgetBar("monthly-budget-bar", List(categories.size) { 0L }, 1, "category-budget-empty")
+        repo.saveBudget(today, true, "CNY", null)
+        find(By.text(text(R.string.no_budget)))
+        assertTrue(device.wait(Until.gone(By.res("monthly-budget-bar")), 5_000))
+    }
+
+    private fun assertBudgetBar(tag: String, amounts: List<Long>, scale: Long, screenshot: String) {
+        val bar = find(By.res(tag)).visibleBounds
+        capture(screenshot)
+        val frame = requireNotNull(device.takeScreenshot())
+        try {
+            val expectedColors = listOf(0xFFD55E00, 0xFF0072B2, 0xFF7E57C2, 0xFF009E73,
+                0xFFC75B9B, 0xFF008C9E, 0xFFC28B00, 0xFF7A7A7A).map { it.toInt() }
+            var start = 0L
+            amounts.forEachIndexed { index, amount ->
+                if (amount == 0L) return@forEachIndexed
+                // Sample inside both edges of each segment to check its width as well as its color.
+                for (fraction in listOf(0.2, 0.8)) {
+                    val x = bar.left + (bar.width() * (start + amount * fraction) / scale).toInt()
+                    val actual = frame.getPixel(x, bar.centerY())
+                    val expected = expectedColors[index]
+                    for (shift in listOf(0, 8, 16)) {
+                        assertTrue("$tag category $index at $fraction: expected ${expected.toUInt().toString(16)}, got ${actual.toUInt().toString(16)}",
+                            kotlin.math.abs(((actual shr shift) and 255) - ((expected shr shift) and 255)) <= 3)
+                    }
+                }
+                start += amount
+            }
+            if (start < scale) {
+                val empty = frame.getPixel(bar.left + (bar.width() * (start + (scale - start) / 2.0) / scale).toInt(), bar.centerY())
+                assertFalse("Unused budget should retain the track color", empty in expectedColors)
+            }
+        } finally { frame.recycle() }
     }
 
     private fun currency(code: String) {
@@ -277,15 +352,15 @@ class PlannerUiTest {
 
     private fun budget(tag: String, value: String) {
         scrollTo(By.res(tag), "expense-list").click()
-        find(By.res("budget-amount")).text = value
+        setText("budget-amount", value)
         find(By.res("save-budget").enabled(true)).click()
         assertTrue(device.wait(Until.gone(By.res("save-budget")), 10_000))
     }
 
     private fun expense(title: String, amount: String, currency: String) {
         find(By.res("add-expense")).click()
-        find(By.res("expense-title")).text = title
-        find(By.res("expense-amount")).text = amount
+        setText("expense-title", title)
+        setText("expense-amount", amount)
         find(By.res("save-expense").enabled(true)).click()
         await { runBlocking { repo.observeExpenses(YearMonth.from(today), currency).first().any { it.title == title } } }
         expenses += runBlocking { repo.observeExpenses(YearMonth.from(today), currency).first().first { it.title == title }.id }
