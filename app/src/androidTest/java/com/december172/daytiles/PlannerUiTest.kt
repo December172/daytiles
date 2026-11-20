@@ -12,9 +12,14 @@ import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import com.december172.daytiles.data.ExchangeRateClient
+import com.december172.daytiles.data.ExchangeRateRepository
+import com.december172.daytiles.data.ExchangeRateTable
+import com.december172.daytiles.data.local.BudgetEntity
 import com.december172.daytiles.data.local.DayTilesDatabase
 import com.december172.daytiles.domain.model.Money
 import java.io.File
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
@@ -81,18 +86,17 @@ class PlannerUiTest {
 
     @Before fun prepare() {
         device = UiDevice.getInstance(instrumentation)
-        originalCurrency = app.settings.ledgerCurrency
+        originalCurrency = app.settings.budgetCurrency
+        app.settings.budgetCurrency = "CNY"
     }
 
     @After fun clean() = runBlocking<Unit> {
         device.pressHome()
         tasks.forEach { repo.deleteTask(it); repo.permanentlyDeleteTask(it) }
         expenses.forEach { repo.deleteExpense(it) }
-        for (code in listOf("CNY", "HKD")) {
-            repo.saveBudget(today, false, code, null)
-            repo.saveBudget(today, true, code, null)
-        }
-        app.settings.ledgerCurrency = originalCurrency
+        repo.saveBudget(today, false, "CNY", null)
+        repo.saveBudget(today, true, "CNY", null)
+        app.settings.budgetCurrency = originalCurrency
     }
 
     @Test fun primaryNavigationDrawerAndLunarSettingRemainUsable() {
@@ -213,16 +217,14 @@ class PlannerUiTest {
         find(By.text(text(R.string.empty_bin_hint)))
     }
 
-    @Test fun expensesBudgetsOverrunsEditingAndCurrencySeparation() = runBlocking<Unit> {
+    @Test fun expensesBudgetsOverrunsAndEditing() = runBlocking<Unit> {
         val anotherDay = today.withDayOfMonth(if (today.dayOfMonth > 1) today.dayOfMonth - 1 else 2)
         expenses += repo.saveExpense(null, anotherDay, "UI another date", 200, "CNY", "transport", "")
         openFeature(R.string.finance_title, "expense-list")
-        currency("CNY")
         budget("edit-day-budget", "10.00")
         budget("edit-month-budget", "100.00")
         expense("UI lunch", "12.50", "CNY")
-        val id = repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.title == "UI lunch" }.id
-        expenses += id
+        val id = repo.observeExpenses(YearMonth.from(today)).first().single { it.title == "UI lunch" }.id
         val overPrefix = context.getString(R.string.budget_over, "")
         assertTrue(find(By.textStartsWith(overPrefix)).text.contains("2.50"))
         assertNull(device.findObject(By.text("UI another date")))
@@ -238,13 +240,7 @@ class PlannerUiTest {
         await { runBlocking { db.financeDao().findExpense(id)?.amountMinor == 1325L } }
         device.wait(Until.gone(By.res("save-expense")), 10_000)
         assertEquals("Updated note", db.financeDao().findExpense(id)!!.note)
-        currency("HKD")
-        find(By.text(text(R.string.no_expenses)))
-        expense("UI HKD", "25.00", "HKD")
-        expenses += repo.observeExpenses(YearMonth.from(today), "HKD").first().single { it.title == "UI HKD" }.id
-        assertEquals(2500L, repo.observeExpenses(YearMonth.from(today), "HKD").first().sumOf { it.amountMinor })
-        currency("CNY")
-        assertEquals(1325L, repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.id == id }.amountMinor)
+        assertEquals(1325L, repo.observeExpenses(YearMonth.from(today)).first().single { it.id == id }.amountMinor)
         scrollTo(By.text("UI lunch"), "expense-list").click()
         find(By.res("expense-title"))
         scrollTo(By.res("delete-expense")).click()
@@ -257,7 +253,6 @@ class PlannerUiTest {
 
     @Test fun zeroBudgetsAndInvalidExpenseAmountsAreHandled() = runBlocking<Unit> {
         openFeature(R.string.finance_title, "expense-list")
-        currency("CNY")
         budget("edit-day-budget", "0")
         find(By.res("add-expense")).click()
         setText("expense-title", "UI invalid expense")
@@ -267,14 +262,14 @@ class PlannerUiTest {
         }
         setText("expense-amount", "0.01")
         find(By.res("save-expense").enabled(true)).click()
-        await { runBlocking { repo.observeExpenses(YearMonth.from(today), "CNY").first().any { it.title == "UI invalid expense" } } }
-        val id = repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.title == "UI invalid expense" }.id
+        await { runBlocking { repo.observeExpenses(YearMonth.from(today)).first().any { it.title == "UI invalid expense" } } }
+        val id = repo.observeExpenses(YearMonth.from(today)).first().single { it.title == "UI invalid expense" }.id
         expenses += id
         val overPrefix = context.getString(R.string.budget_over, "")
         assertTrue(find(By.textStartsWith(overPrefix)).text.contains("0.01"))
         scrollTo(By.res("edit-day-budget"), "expense-list").click()
         click(R.string.remove_budget)
-        await { runBlocking { db.financeDao().observeDailyBudget("CNY").first() == null } }
+        await { runBlocking { repo.observeBudgets(YearMonth.from(today)).first().daily.isEmpty() } }
     }
 
     @Test fun dailyBudgetAppliesToEveryDateAndEditsAndRemovalAreGlobal() = runBlocking<Unit> {
@@ -293,7 +288,6 @@ class PlannerUiTest {
                 if (spent > limit) R.string.budget_over else R.string.budget_left, money(kotlin.math.abs(limit - spent))))))
         }
         openFeature(R.string.finance_title, "expense-list")
-        currency("CNY")
         assertDaily(1250, 1000)
         find(By.res("finance-previous")).click()
         assertDaily(250, 1000)
@@ -313,9 +307,7 @@ class PlannerUiTest {
         find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
         click(R.string.today)
         find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
-        assertEquals(100000L, repo.observeBudgets(YearMonth.from(today), "CNY").first().single().amountMinor)
-        currency("HKD")
-        find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
+        assertEquals(100000L, repo.observeBudgets(YearMonth.from(today)).first().monthly.single().amountMinor)
     }
 
     @Test fun budgetBarsShowCategoryColorsAndProportions() = runBlocking<Unit> {
@@ -330,7 +322,6 @@ class PlannerUiTest {
         repo.saveBudget(today, false, "CNY", total * 2)
         repo.saveBudget(today, true, "CNY", total * 4)
         openFeature(R.string.finance_title, "expense-list")
-        currency("CNY")
         assertBudgetBar("daily-budget-bar", amounts, total * 2, "category-budget-daily")
 
         click(R.string.finance_monthly)
@@ -384,64 +375,81 @@ class PlannerUiTest {
         } finally { frame.recycle() }
     }
 
-    private fun currency(code: String) {
-        find(By.res("ledger-currency")).click()
-        // The menu item and the anchor can share text; prefer the last visible match.
-        device.wait(Until.hasObject(By.text(code)), 5_000)
-        device.findObjects(By.text(code)).last().click()
-        await { app.settings.ledgerCurrency == code }
-    }
-
-    @Test fun currencyConverterWorksOfflineAndAppliesOnlyToTheEditedExpense() = runBlocking<Unit> {
+    @Test fun budgetsCombineCurrenciesAndSettingsOwnTheRateControls() = runBlocking<Unit> {
         val rates = app.exchangeRates
         val preferences = context.getSharedPreferences("official_exchange_rates", android.content.Context.MODE_PRIVATE)
         val originalRates = preferences.all.mapValues { it.value as String }
+        val monthStart = today.withDayOfMonth(1)
+        suspend fun seedRate(usdRate: String) {
+            val fixture = ExchangeRateRepository(context, ExchangeRateClient { source ->
+                ExchangeRateTable(source, "2026-11-20 09:15", System.currentTimeMillis(),
+                    mapOf("CNY" to BigDecimal.ONE, "USD" to BigDecimal(usdRate), "HKD" to BigDecimal("0.9")))
+            })
+            fixture.refresh("USD", "CNY")
+        }
+        fun money(amount: Long, code: String) = Money.format(amount, code, context.resources.configuration.locales[0])
+        fun assertDaily(spent: Long, limit: Long, code: String) {
+            find(By.res("daily-summary").hasDescendant(By.res("budget-spent").text(money(spent, code))))
+            find(By.res("daily-summary").hasDescendant(By.text(context.getString(R.string.budget_amount_value, money(limit, code)))))
+            find(By.res("daily-summary").hasDescendant(By.text(context.getString(R.string.budget_left, money(limit - spent, code)))))
+        }
         try {
             rates.clearCachedRates()
-            val fixtureRepo = com.december172.daytiles.data.ExchangeRateRepository(context,
-                com.december172.daytiles.data.ExchangeRateClient { source ->
-                    com.december172.daytiles.data.ExchangeRateTable(source, "2026-11-20 09:15", System.currentTimeMillis(),
-                        mapOf("CNY" to java.math.BigDecimal.ONE, "USD" to java.math.BigDecimal("7.25"), "HKD" to java.math.BigDecimal("0.9")))
-                })
-            fixtureRepo.refresh("CNY", "USD")
-            app.settings.ledgerCurrency = "CNY"
+            seedRate("7.25")
+            val finance = db.financeDao()
+            finance.deleteSharedBudget(monthStart, "SHARED_MONTH")
+            finance.saveBudget(BudgetEntity(monthStart, "MONTH", "CNY", 20000, 1))
+            finance.saveBudget(BudgetEntity(monthStart, "MONTH", "USD", 1000, 2))
+            repo.saveBudget(today, false, "CNY", 15000)
+            expenses += repo.saveExpense(null, today, "Fixture CNY expense", 1000, "CNY", "food", "")
             openFeature(R.string.finance_title, "expense-list")
+            assertNull(device.findObject(By.res("open-exchange")))
+            expense("Fixture USD expense", "12.34", "USD")
+            val record = repo.observeExpenses(YearMonth.from(today)).first().single { it.title == "Fixture USD expense" }
+            assertEquals("USD", record.currency)
+            assertEquals(1234L, record.amountMinor)
+            assertDaily(9947, 15000, "CNY")
+            capture("combined-budget-cny")
+            click(R.string.finance_monthly)
+            find(By.res("monthly-summary").hasDescendant(By.text(context.getString(R.string.budget_amount_value, money(27250, "CNY")))))
+            click(R.string.daily_goal)
+            assertDaily(9947, 15000, "CNY")
+            rates.clearCachedRates()
+            find(By.res("budget-missing-rates"))
+            assertNull(device.findObject(By.res("daily-budget-bar")))
+            seedRate("8.00")
+            assertDaily(10872, 15000, "CNY")
+
+            openFeature(R.string.settings_title)
             find(By.res("open-exchange")).click()
             find(By.res("exchange-screen"))
             find(By.res("exchange-refresh").enabled(true))
             setText("exchange-amount", "10.00")
-            find(By.res("exchange-result").text(Money.format(138, "USD", context.resources.configuration.locales[0])))
+            find(By.res("exchange-result").text(money(125, "USD")))
             if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
-            scrollTo(By.res("exchange-rate"))
-            capture("exchange-cached-fixture")
             find(By.desc(text(R.string.back))).click()
-            find(By.res("add-expense")).click()
-            setText("expense-title", "Converted fixture expense")
-            if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
-            scrollTo(By.res("expense-convert")).click()
-            assertFalse(find(By.res("exchange-to")).isEnabled)
-            setText("exchange-amount", "12.34")
-            if (device.executeShellCommand("dumpsys input_method").contains("mInputShown=true")) device.pressBack()
-            scrollTo(By.res("exchange-use-amount")).click()
-            find(By.res("expense-amount").text("89.47"))
-            find(By.res("save-expense").enabled(true)).click()
-            await { runBlocking { repo.observeExpenses(YearMonth.from(today), "CNY").first().any { it.title == "Converted fixture expense" } } }
-            val saved = repo.observeExpenses(YearMonth.from(today), "CNY").first().single { it.title == "Converted fixture expense" }
-            expenses += saved.id
-            assertEquals(8947L, saved.amountMinor)
-            assertEquals("CNY", saved.currency)
-            // Reopen with the persistent cache and clear it from the UI.
-            find(By.res("open-exchange")).click()
-            scrollTo(By.res("exchange-clear-cache")).click()
-            find(By.res("exchange-no-rate"))
-            assertNull(rates.cachedRate("CNY", "USD"))
-            assertNull(rates.cachedRate("USD", "CNY"))
-            find(By.desc(text(R.string.back))).click()
+            find(By.res("budget-display-currency")).click()
+            clickCurrency("USD")
+            await { app.settings.budgetCurrency == "USD" }
+            openFeature(R.string.finance_title, "expense-list")
+            assertDaily(1359, 1875, "USD")
+            capture("combined-budget-usd")
+            find(By.res("edit-day-budget")).click()
+            find(By.res("budget-amount").text("150.00"))
+            click(R.string.cancel)
+            assertEquals(record, db.financeDao().findExpense(record.id))
         } finally {
+            db.openHelper.writableDatabase.execSQL("DELETE FROM budgets WHERE periodType = 'MONTH' AND periodStart = ? AND currency IN ('CNY', 'USD')",
+                arrayOf(monthStart.toString()))
             preferences.edit().clear().apply {
                 originalRates.forEach { (key, value) -> putString(key, value) }
             }.commit()
         }
+    }
+
+    private fun clickCurrency(code: String) {
+        device.wait(Until.hasObject(By.text(code)), 5_000)
+        device.findObjects(By.text(code)).last().click()
     }
 
     private fun budget(tag: String, value: String) {
@@ -453,11 +461,15 @@ class PlannerUiTest {
 
     private fun expense(title: String, amount: String, currency: String) {
         find(By.res("add-expense")).click()
+        if (currency != app.settings.budgetCurrency) {
+            scrollTo(By.res("expense-currency")).click()
+            clickCurrency(currency)
+        }
         setText("expense-title", title)
         setText("expense-amount", amount)
         find(By.res("save-expense").enabled(true)).click()
-        await { runBlocking { repo.observeExpenses(YearMonth.from(today), currency).first().any { it.title == title } } }
-        expenses += runBlocking { repo.observeExpenses(YearMonth.from(today), currency).first().first { it.title == title }.id }
+        await { runBlocking { repo.observeExpenses(YearMonth.from(today)).first().any { it.title == title && it.currency == currency } } }
+        expenses += runBlocking { repo.observeExpenses(YearMonth.from(today)).first().first { it.title == title }.id }
         assertTrue(device.wait(Until.gone(By.res("save-expense")), 10_000))
     }
 

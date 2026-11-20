@@ -13,7 +13,11 @@
     <string name="save_failed">未能儲存更改，請重試。</string>
     <string name="finance_title">記帳與預算</string>
     <string name="finance_monthly">每月</string>
-    <string name="finance_currency_hint">各幣種的支出和預算分別統計，不進行匯率換算。</string>
+    <string name="finance_currency_hint">按參考匯率加總各幣別的金額。</string>
+    <string name="budget_display_currency">預算顯示幣別</string>
+    <string name="expense_currency">幣別（%1$s）</string>
+    <string name="budget_missing_rates">缺少 %1$s 匯率。請在設定中重新整理匯率。</string>
+    <string name="budget_legacy_combined">此額度合併了原有的各幣別預算。儲存後將以顯示的幣別設定單一額度。</string>
     <string name="previous_period">上一期</string>
     <string name="next_period">下一期</string>
     <string name="add_expense">新增支出</string>
@@ -32,7 +36,7 @@
     <string name="set_budget">設定預算</string>
     <string name="edit_budget">編輯預算</string>
     <string name="day_budget">每日預算</string>
-    <string name="daily_budget_hint">此幣種的每日預算上限適用於每一天。</string>
+    <string name="daily_budget_hint">共用的每日預算上限適用於每一天。</string>
     <string name="month_budget">月度預算</string>
     <string name="no_budget">尚未設定預算。</string>
     <string name="budget_amount_value">預算：%1$s</string>

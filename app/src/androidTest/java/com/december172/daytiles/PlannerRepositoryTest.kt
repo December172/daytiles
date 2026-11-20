@@ -105,21 +105,22 @@ class PlannerRepositoryTest {
         assertFalse(repo.subtasksForTask(id).single().isCompleted)
     }
 
-    @Test fun expensesUseExactTotalsAndSeparateDatesMonthsAndCurrencies() = runBlocking {
+    @Test fun expensesKeepOriginalCurrenciesWhenListedAndMovedBetweenMonths() = runBlocking {
         val january = LocalDate.of(2028, 1, 31)
         val february = january.plusDays(1)
         val first = repo.saveExpense(null, january, "A", 10, "CNY", "food", "note")
         repo.saveExpense(null, january, "B", 20, "CNY", "food", "")
         repo.saveExpense(null, january, "HK", 999, "HKD", "other", "")
         repo.saveExpense(null, february, "Next", 40, "CNY", "other", "")
-        assertEquals(30L, repo.observeExpenses(YearMonth.from(january), "CNY").first().sumOf { it.amountMinor })
-        assertEquals(999L, repo.observeExpenses(YearMonth.from(january), "HKD").first().sumOf { it.amountMinor })
+        val januaryExpenses = repo.observeExpenses(YearMonth.from(january)).first()
+        assertEquals(30L, januaryExpenses.filter { it.currency == "CNY" }.sumOf { it.amountMinor })
+        assertEquals(999L, januaryExpenses.single { it.currency == "HKD" }.amountMinor)
         repo.saveExpense(first, february, "Edited", 15, "CNY", "learning", "edited note")
-        assertEquals(20L, repo.observeExpenses(YearMonth.from(january), "CNY").first().sumOf { it.amountMinor })
-        assertEquals(55L, repo.observeExpenses(YearMonth.from(february), "CNY").first().sumOf { it.amountMinor })
+        assertEquals(2, repo.observeExpenses(YearMonth.from(january)).first().size)
+        assertEquals(55L, repo.observeExpenses(YearMonth.from(february)).first().sumOf { it.amountMinor })
         assertEquals("edited note", db.financeDao().findExpense(first)!!.note)
         repo.deleteExpense(first)
-        assertEquals(40L, repo.observeExpenses(YearMonth.from(february), "CNY").first().sumOf { it.amountMinor })
+        assertEquals(40L, repo.observeExpenses(YearMonth.from(february)).first().sumOf { it.amountMinor })
         assertNull(db.financeDao().findExpense(first))
     }
 
@@ -127,62 +128,58 @@ class PlannerRepositoryTest {
         repo.saveBudget(date, false, "CNY", 0)
         repo.saveBudget(date, true, "CNY", 10000)
         repo.saveBudget(date, true, "HKD", 5000)
-        var budgets = repo.observeBudgets(YearMonth.from(date), "CNY").first()
-        assertEquals(2, budgets.size)
-        assertEquals(0L, budgets.single { it.periodType == "DAILY" }.amountMinor)
-        assertEquals(date.withDayOfMonth(1), budgets.single { it.periodType == "MONTH" }.periodStart)
+        var budgets = repo.observeBudgets(YearMonth.from(date)).first()
+        assertEquals(0L, budgets.daily.single().amountMinor)
+        assertEquals("HKD", budgets.monthly.single().currency)
+        assertEquals(5000L, budgets.monthly.single().amountMinor)
+        assertEquals(date.withDayOfMonth(1), budgets.monthly.single().periodStart)
         repo.saveBudget(date, false, "CNY", 1200)
         repo.saveBudget(date, true, "CNY", null)
-        budgets = repo.observeBudgets(YearMonth.from(date), "CNY").first()
-        assertEquals(1200L, budgets.single().amountMinor)
-        assertEquals(5000L, repo.observeBudgets(YearMonth.from(date), "HKD").first().single().amountMinor)
+        budgets = repo.observeBudgets(YearMonth.from(date)).first()
+        assertEquals(1200L, budgets.daily.single().amountMinor)
+        assertTrue(budgets.monthly.isEmpty())
     }
 
-    @Test fun dailyBudgetIsSharedAcrossDatesAndMonthsButSeparateByCurrency() = runBlocking {
-        val nextMonth = date.plusMonths(1)
+    @Test fun dailyLimitIsSharedAcrossDatesAndMonths() = runBlocking {
+        val currentMonth = YearMonth.from(date)
+        val nextMonth = currentMonth.plusMonths(1)
         repo.saveBudget(date, false, "CNY", 1000)
-        repo.saveBudget(date, false, "HKD", 500)
         repo.saveBudget(date, true, "CNY", 30000)
-        repo.saveExpense(null, date, "Lunch", 1250, "CNY", "food", "")
-        repo.saveExpense(null, nextMonth, "Bus", 250, "CNY", "transport", "")
-        assertEquals(1000L, repo.observeBudgets(YearMonth.from(nextMonth), "CNY").first().single().amountMinor)
-        repo.saveBudget(nextMonth, false, "CNY", 2000)
-        for (month in listOf(YearMonth.from(date.minusYears(1)), YearMonth.from(date), YearMonth.from(nextMonth))) {
-            assertEquals(2000L, repo.observeBudgets(month, "CNY").first().single { it.periodType == "DAILY" }.amountMinor)
-            assertEquals(500L, repo.observeBudgets(month, "HKD").first().single().amountMinor)
+        assertEquals(1000L, repo.observeBudgets(nextMonth).first().daily.single().amountMinor)
+        repo.saveBudget(nextMonth.atDay(1), false, "HKD", 500)
+        for (month in listOf(currentMonth.minusYears(1), currentMonth, nextMonth)) {
+            val daily = repo.observeBudgets(month).first().daily.single()
+            assertEquals(500L, daily.amountMinor)
+            assertEquals("HKD", daily.currency)
         }
-        assertEquals(30000L, repo.observeBudgets(YearMonth.from(date), "CNY").first().single { it.periodType == "MONTH" }.amountMinor)
-        repo.saveBudget(nextMonth, false, "CNY", null)
-        assertEquals("MONTH", repo.observeBudgets(YearMonth.from(date), "CNY").first().single().periodType)
-        assertTrue(repo.observeBudgets(YearMonth.from(nextMonth), "CNY").first().isEmpty())
-        assertEquals(500L, repo.observeBudgets(YearMonth.from(nextMonth), "HKD").first().single().amountMinor)
-        assertEquals(1250L, repo.observeExpenses(YearMonth.from(date), "CNY").first().single().amountMinor)
-        assertEquals(250L, repo.observeExpenses(YearMonth.from(nextMonth), "CNY").first().single().amountMinor)
+        repo.saveBudget(nextMonth.atDay(1), false, "USD", null)
+        assertTrue(repo.observeBudgets(nextMonth).first().daily.isEmpty())
+        assertTrue(repo.observeBudgets(currentMonth).first().daily.isEmpty())
+        assertEquals(30000L, repo.observeBudgets(currentMonth).first().monthly.single().amountMinor)
+        assertTrue(repo.observeBudgets(nextMonth).first().monthly.isEmpty())
     }
 
-    @Test fun legacyDailyBudgetsUseLatestEditWithoutLosingExistingRecords() = runBlocking {
+    @Test fun existingLimitsAreMergedAndArchivedAfterExplicitEdits() = runBlocking {
         val dao = db.financeDao()
+        val month = YearMonth.from(date)
         val older = BudgetEntity(date.plusMonths(1), "DAY", "CNY", 1000, 10)
         val recent = BudgetEntity(date.minusMonths(1), "DAY", "CNY", 2000, 20)
-        dao.saveBudget(older)
-        dao.saveBudget(recent)
-        dao.saveBudget(BudgetEntity(date, "DAY", "HKD", 500, 30))
-        repo.saveBudget(date, true, "CNY", 30000)
-        assertEquals(recent, dao.observeDailyBudget("CNY").first())
-        assertEquals(recent, repo.observeBudgets(YearMonth.from(date.plusYears(1)), "CNY").first().single())
-        // A new shared setting always takes precedence, even if a legacy timestamp is in the future.
-        dao.saveBudget(older.copy(updatedAt = Long.MAX_VALUE))
-        repo.saveBudget(date, false, "CNY", 0)
-        assertEquals(0L, repo.observeBudgets(YearMonth.from(date), "CNY").first().single { it.periodType == "DAILY" }.amountMinor)
-        db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM budgets WHERE periodType = 'DAY'").use {
-            assertTrue(it.moveToFirst())
-            assertEquals(3, it.getInt(0))
-        }
-        // Removing the shared limit must also remove legacy fallbacks, so none can reappear.
+        val dailyHkd = BudgetEntity(LocalDate.ofEpochDay(0), "DAILY", "HKD", 500, 5)
+        val monthlyCny = BudgetEntity(month.atDay(1), "MONTH", "CNY", 30000, 40)
+        val monthlyUsd = BudgetEntity(month.atDay(1), "MONTH", "USD", 700, 50)
+        val legacy = listOf(older, recent, dailyHkd, monthlyCny, monthlyUsd,
+            BudgetEntity(date, "DAY", "HKD", 900, Long.MAX_VALUE))
+        legacy.forEach { dao.saveBudget(it) }
+        assertEquals(setOf(recent, dailyHkd), repo.observeBudgets(month.plusYears(1)).first().daily.toSet())
+        assertEquals(setOf(monthlyCny, monthlyUsd), repo.observeBudgets(month).first().monthly.toSet())
+        repo.saveBudget(date, false, "USD", 0)
+        assertEquals(0L, repo.observeBudgets(month).first().daily.single().amountMinor)
         repo.saveBudget(date.plusYears(1), false, "CNY", null)
-        assertNull(dao.observeDailyBudget("CNY").first())
-        assertEquals(30000L, repo.observeBudgets(YearMonth.from(date), "CNY").first().single().amountMinor)
-        assertEquals(500L, dao.observeDailyBudget("HKD").first()!!.amountMinor)
+        repo.saveBudget(date, true, "CNY", null)
+        val limits = repo.observeBudgets(month).first()
+        assertTrue(limits.daily.isEmpty())
+        assertTrue(limits.monthly.isEmpty())
+        assertTrue(dao.observeBudgetRows(month.atDay(1)).first().containsAll(legacy))
     }
 
     @Test fun expenseValidationRejectsInvalidAmountsWithoutWriting() = runBlocking {
@@ -192,7 +189,7 @@ class PlannerRepositoryTest {
                 fail("Invalid amount was accepted")
             } catch (_: IllegalArgumentException) { }
         }
-        assertTrue(repo.observeExpenses(YearMonth.from(date), "CNY").first().isEmpty())
+        assertTrue(repo.observeExpenses(YearMonth.from(date)).first().isEmpty())
     }
 
     @Test fun financeAndRecycleBinPersistAfterDatabaseReopen() = runBlocking {
@@ -212,11 +209,11 @@ class PlannerRepositoryTest {
             repository = DayRepository(disk)
             assertEquals(id, repository.observeDeletedTasks().first().single().id)
             assertEquals("Persist child", repository.subtasksForTask(id).single().title)
-            assertEquals(1250L, repository.observeExpenses(YearMonth.from(date), "CNY").first().single().amountMinor)
-            val budgets = repository.observeBudgets(YearMonth.from(date), "CNY").first()
-            assertEquals(30000L, budgets.single { it.periodType == "MONTH" }.amountMinor)
-            assertEquals(1000L, budgets.single { it.periodType == "DAILY" }.amountMinor)
-            assertEquals(1000L, repository.observeBudgets(YearMonth.from(date.plusYears(1)), "CNY").first().single().amountMinor)
+            assertEquals(1250L, repository.observeExpenses(YearMonth.from(date)).first().single().amountMinor)
+            val budgets = repository.observeBudgets(YearMonth.from(date)).first()
+            assertEquals(30000L, budgets.monthly.single().amountMinor)
+            assertEquals(1000L, budgets.daily.single().amountMinor)
+            assertEquals(1000L, repository.observeBudgets(YearMonth.from(date.plusYears(1))).first().daily.single().amountMinor)
             disk.close()
         } finally { context.deleteDatabase(name) }
     }

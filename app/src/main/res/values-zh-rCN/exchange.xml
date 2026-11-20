@@ -16,7 +16,8 @@
     <string name="exchange_refresh_failed">无法刷新官方汇率，请检查网络后重试。已保存汇率仍可使用。</string>
     <string name="exchange_refresh">刷新汇率</string>
     <string name="exchange_refreshing">正在获取官方汇率…</string>
-    <string name="exchange_use_amount">使用换算金额</string>
+    <string name="exchange_settings">汇率</string>
+    <string name="exchange_settings_hint">查看或刷新预算使用的官方汇率，也可换算金额。</string>
     <string name="exchange_reference_hint">仅供估算参考。官方发布可能滞后，尤其是香港金管局月报数据，请核对数据日期。银行、银行卡汇率及手续费可能不同；已有记录和预算仍保留原币种。</string>
     <string name="exchange_clear_cache">清除已保存汇率</string>
 </resources>

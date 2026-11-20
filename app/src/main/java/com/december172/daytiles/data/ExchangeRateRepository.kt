@@ -1,6 +1,7 @@
 package com.december172.daytiles.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.december172.daytiles.domain.model.ExchangeRate
 import com.december172.daytiles.domain.model.ExchangeRateSource
@@ -16,7 +17,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -116,6 +120,9 @@ class OfficialExchangeRateClient(
     }
 }
 
+internal fun List<ExchangeRateTable>.bestQuote(from: String, to: String): ExchangeRate? =
+    mapNotNull { it.quote(from, to) }.maxByOrNull { it.updatedAt.take(10) }
+
 private fun downloadRates(url: URL): String {
     val connection = (url.openConnection() as HttpURLConnection).apply {
         connectTimeout = 10_000
@@ -158,11 +165,19 @@ class ExchangeRateRepository(
         }
     } catch (_: Exception) { null }
 
+    fun cachedTables(): List<ExchangeRateTable> = ExchangeRateSource.entries.mapNotNull(::cachedTable)
+
+    fun observeTables() = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(cachedTables()) }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        trySend(cachedTables())
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate()
+
     fun cachedRate(from: String, to: String): ExchangeRate? {
         require(from in Money.currencies && to in Money.currencies)
         if (from == to) return ExchangeRate(from, to, BigDecimal.ONE, "", 0)
-        return ExchangeRateSource.entries.mapNotNull { cachedTable(it)?.quote(from, to) }
-            .maxByOrNull { it.updatedAt.take(10) }
+        return cachedTables().bestQuote(from, to)
     }
 
     suspend fun refresh(from: String, to: String, force: Boolean = true): ExchangeRate = withContext(Dispatchers.IO) {
@@ -190,6 +205,20 @@ class ExchangeRateRepository(
                 }
             }
             throw IOException("Official exchange rate feeds unavailable")
+        }
+    }
+
+    /** Request each needed feed family at most once per budget refresh. */
+    suspend fun refreshForBudget(currencies: Set<String>, displayCurrency: String) {
+        val foreign = currencies - displayCurrency
+        val pairs = if (displayCurrency == "TWD") foreign.take(1)
+        else listOfNotNull(foreign.firstOrNull { it != "TWD" }, "TWD".takeIf { it in foreign })
+        for (currency in pairs) {
+            try {
+                refresh(currency, displayCurrency, force = false)
+            } catch (_: IOException) {
+                // Keep cached tables. The budget summary identifies any missing conversions.
+            }
         }
     }
 

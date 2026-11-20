@@ -8,9 +8,9 @@ The drawer and Me page now provide three additional planning destinations.
 - **Recycle Bin** retains deleted tasks, including their original dates, details, tags, completion state, reminder metadata, and subtasks. Restore returns a task to its original date. Permanent deletion and Empty bin require confirmation; task and subtask removal runs in one transaction.
 - **Expenses & budgets** records dated expenses with amounts, categories, and optional notes. Daily and monthly views show the applicable records, totals, budgets, and remaining or over-budget amounts. Expenses can be edited or deleted; budgets can be edited or removed independently.
 
-Money uses integer minor units with exact decimal parsing. Inputs with excess decimal places, nonpositive expense amounts, and out-of-range amounts are rejected. Zero budgets are supported. CNY, HKD, TWD, and USD are separate ledgers; changing the selected currency does not convert existing amounts.
+Money uses integer minor units with exact decimal parsing. DayTiles rejects inputs with excess decimal places, nonpositive expense amounts, and out-of-range amounts. Expenses retain their original amounts and currencies. The summary converts CNY, HKD, TWD, and USD to the display currency under **Settings → Expenses & budgets**. [Exchange-rate integration](exchange-rates.en.md)
 
-The daily budget is one shared limit per currency, applied to every date across all months. Each day compares its own spending with that limit. Editing or removing the daily budget from any date affects every date; monthly budgets remain specific to each month. For existing date-specific daily budgets, the most recently edited value becomes the shared default and the original records remain stored. Removing the daily budget also clears that currency's old daily budgets so an older value cannot reappear.
+One daily limit applies to every date, and each month has its own limit. Both support zero. Previous per-currency budgets contribute to a merged total using reference rates. For each currency, the daily total uses its previous shared daily limit or falls back to the most recently edited date-specific limit. Saving an edit sets one amount in the editor’s currency. Removing the limit excludes the previous values from totals and keeps the original records in the database.
 
 ## Persistence
 

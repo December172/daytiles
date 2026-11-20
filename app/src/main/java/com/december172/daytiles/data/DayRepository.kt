@@ -29,7 +29,7 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,6 +37,8 @@ import java.util.UUID
 import com.december172.daytiles.widget.DayTilesWidgetProvider
 import com.december172.daytiles.data.CourseReminderScheduler
 import com.december172.daytiles.widget.WeekWidgetProvider
+
+data class BudgetLimits(val daily: List<BudgetEntity>, val monthly: List<BudgetEntity>)
 
 class DayRepository(
     private val database: DayTilesDatabase,
@@ -82,13 +84,18 @@ class DayRepository(
         refreshWidgets()
     }
 
-    fun observeExpenses(month: YearMonth, currency: String) =
-        financeDao.observeExpenses(month.atDay(1), month.atEndOfMonth(), currency)
+    fun observeExpenses(month: YearMonth) =
+        financeDao.observeExpenses(month.atDay(1), month.atEndOfMonth())
 
-    fun observeBudgets(month: YearMonth, currency: String) = combine(
-        financeDao.observeBudgets(month.atDay(1), month.atEndOfMonth(), currency),
-        financeDao.observeDailyBudget(currency),
-    ) { monthly, daily -> monthly + listOfNotNull(daily) }
+    fun observeBudgets(month: YearMonth): Flow<BudgetLimits> = financeDao.observeBudgetRows(month.atDay(1)).map { rows ->
+        fun limits(sharedType: String, vararg legacyTypes: String): List<BudgetEntity> {
+            val shared = rows.firstOrNull { it.periodType == sharedType }
+            if (shared != null) return listOf(shared).filter { it.amountMinor >= 0 }
+            // The query places DAILY before legacy DAY and the newest edit first within each type.
+            return rows.filter { it.periodType in legacyTypes }.distinctBy { it.currency }
+        }
+        BudgetLimits(limits("SHARED_DAILY", "DAILY", "DAY"), limits("SHARED_MONTH", "MONTH"))
+    }
 
     suspend fun saveExpense(
         id: Long?, date: LocalDate, title: String, amountMinor: Long,
@@ -113,15 +120,13 @@ class DayRepository(
 
     suspend fun saveBudget(date: LocalDate, monthly: Boolean, currency: String, amountMinor: Long?) {
         require(currency in Money.currencies)
-        // DAILY is a shared setting; its fixed key is independent of the selected date.
+        require(amountMinor == null || amountMinor in 0..Money.MAX_AMOUNT_MINOR)
         val start = if (monthly) date.withDayOfMonth(1) else LocalDate.ofEpochDay(0)
-        val type = if (monthly) "MONTH" else "DAILY"
-        if (amountMinor == null) {
-            if (monthly) financeDao.deleteBudget(start, type, currency)
-            else financeDao.deleteDailyBudget(currency)
-        } else {
-            require(amountMinor in 0..Money.MAX_AMOUNT_MINOR)
-            financeDao.saveBudget(BudgetEntity(start, type, currency, amountMinor, System.currentTimeMillis()))
+        val type = if (monthly) "SHARED_MONTH" else "SHARED_DAILY"
+        database.withTransaction {
+            financeDao.deleteSharedBudget(start, type)
+            // A removal marker prevents archived per-currency limits from reappearing.
+            financeDao.saveBudget(BudgetEntity(start, type, currency, amountMinor ?: -1, System.currentTimeMillis()))
         }
     }
 

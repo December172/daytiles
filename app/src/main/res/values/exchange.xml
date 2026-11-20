@@ -16,7 +16,8 @@
     <string name="exchange_refresh_failed">Could not refresh official rates. Check your connection and try again. Any saved rate is still available.</string>
     <string name="exchange_refresh">Refresh rates</string>
     <string name="exchange_refreshing">Loading official rates…</string>
-    <string name="exchange_use_amount">Use converted amount</string>
+    <string name="exchange_settings">Exchange rates</string>
+    <string name="exchange_settings_hint">View or refresh the official rates used for budgets and use the currency converter.</string>
     <string name="exchange_reference_hint">Reference estimate only. Official publication can lag, especially HKMA bulletin data; check the observation date. Bank/card rates and fees may differ. Existing records and budgets keep their currency.</string>
     <string name="exchange_clear_cache">Clear saved rates</string>
 </resources>

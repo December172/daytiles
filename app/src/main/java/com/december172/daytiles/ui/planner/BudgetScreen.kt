@@ -34,11 +34,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.december172.daytiles.DayTilesApplication
 import com.december172.daytiles.R
+import com.december172.daytiles.data.bestQuote
 import com.december172.daytiles.data.local.BudgetEntity
 import com.december172.daytiles.data.local.ExpenseEntity
 import com.december172.daytiles.domain.model.Money
 import com.december172.daytiles.ui.calendar.MonthPicker
 import com.december172.daytiles.ui.components.PlannerTopBar
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -74,11 +77,9 @@ fun BudgetScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val app = context.applicationContext as DayTilesApplication
     val repo = app.repository
-    var currency by rememberSaveable { mutableStateOf(app.settings.ledgerCurrency) }
+    val currency by app.settings.budgetDisplayCurrency.collectAsStateWithLifecycle()
     var dateEpoch by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
     var monthly by rememberSaveable { mutableStateOf(false) }
-    var currencyMenu by remember { mutableStateOf(false) }
-    var converting by rememberSaveable { mutableStateOf(false) }
     var monthPicker by rememberSaveable { mutableStateOf(false) }
     var showEditor by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -89,6 +90,13 @@ fun BudgetScreen(onBack: () -> Unit) {
     val month = YearMonth.from(date)
     val locale = LocalConfiguration.current.locales[0]
     val scope = rememberCoroutineScope()
+    val rates = app.exchangeRates
+    val tables by remember(rates) { rates.observeTables() }.collectAsStateWithLifecycle(remember(rates) { rates.cachedTables() })
+    val conversions = remember(currency, tables) {
+        Money.currencies.associateWith { code ->
+            if (code == currency) BigDecimal.ONE else tables.bestQuote(code, currency)?.rate
+        }
+    }
     fun save(action: suspend () -> Unit) {
         if (busy) return
         busy = true; failed = false
@@ -114,16 +122,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                 Spacer(Modifier.width(8.dp))
                 FilterChip(monthly, { monthly = true }, label = { Text(stringResource(R.string.finance_monthly)) })
                 Spacer(Modifier.weight(1f))
-                Box {
-                    TextButton(onClick = { currencyMenu = true }, modifier = Modifier.testTag("ledger-currency")) { Text(currency) }
-                    DropdownMenu(currencyMenu, { currencyMenu = false }) {
-                        Money.currencies.forEach { code ->
-                            DropdownMenuItem(text = { Text(code) }, onClick = {
-                                currency = code; app.settings.ledgerCurrency = code; currencyMenu = false
-                            })
-                        }
-                    }
-                }
+                Text(currency, style = MaterialTheme.typography.labelLarge)
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { dateEpoch = (if (monthly) date.minusMonths(1) else date.minusDays(1)).toEpochDay() },
@@ -144,28 +143,32 @@ fun BudgetScreen(onBack: () -> Unit) {
                     Icon(painterResource(R.drawable.ic_planner_chevron_right), stringResource(R.string.next_period))
                 }
             }
-            TextButton(onClick = { converting = true }, modifier = Modifier.testTag("open-exchange")) {
-                Text(stringResource(R.string.exchange_title))
-            }
-            Text(stringResource(R.string.finance_currency_hint), Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            // Give every currency/month its own collected state; never flash another ledger's totals.
-            key(month, currency) {
-                val expenses by remember { repo.observeExpenses(month, currency) }.collectAsStateWithLifecycle(emptyList())
-                val budgets by remember { repo.observeBudgets(month, currency) }.collectAsStateWithLifecycle(emptyList())
+            key(month) {
+                val expenseRows by remember { repo.observeExpenses(month) }.collectAsStateWithLifecycle(null)
+                val budgets by remember { repo.observeBudgets(month) }.collectAsStateWithLifecycle(null)
+                val expenses = expenseRows.orEmpty()
                 val dayExpenses = expenses.filter { it.date == date }
-                val monthBudget = budgets.firstOrNull { it.periodType == "MONTH" }
-                val dayBudget = budgets.firstOrNull { it.periodType == "DAY" || it.periodType == "DAILY" }
+                val monthBudget = budgets?.monthly.orEmpty()
+                val dayBudget = budgets?.daily.orEmpty()
+                val currencies = remember(expenses, monthBudget, dayBudget) {
+                    buildSet {
+                        expenses.forEach { add(it.currency) }
+                        (monthBudget + dayBudget).filter { it.amountMinor != 0L }.forEach { add(it.currency) }
+                    }
+                }
+                if (expenseRows != null && budgets != null) {
+                    LaunchedEffect(rates, currencies, currency) { rates.refreshForBudget(currencies, currency) }
+                }
                 val shown = if (monthly) expenses else dayExpenses
                 LazyColumn(Modifier.weight(1f).testTag("expense-list"), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (!monthly) item {
-                        BudgetSummary(false, dayExpenses, dayBudget, currency, locale) {
+                        BudgetSummary(false, dayExpenses, dayBudget, currency, conversions, locale, budgets != null) {
                             failed = false; budgetMonthly = false
                         }
                     }
                     item {
-                        BudgetSummary(true, expenses, monthBudget, currency, locale) {
+                        BudgetSummary(true, expenses, monthBudget, currency, conversions, locale, budgets != null) {
                             failed = false; budgetMonthly = true
                         }
                     }
@@ -182,7 +185,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                                 ListItem(headlineContent = { Text(expense.title) },
                                     leadingContent = { ExpenseCategoryDot(expense.category) },
                                     supportingContent = { Text(stringResource(expenseCategories[expense.category] ?: R.string.category_other)) },
-                                    trailingContent = { Text(Money.format(expense.amountMinor, currency, locale), style = MaterialTheme.typography.titleSmall) })
+                                    trailingContent = { Text(Money.format(expense.amountMinor, expense.currency, locale), style = MaterialTheme.typography.titleSmall) })
                             }
                         }
                     }
@@ -191,61 +194,90 @@ fun BudgetScreen(onBack: () -> Unit) {
                 if (showEditor && (editingId == null || editing != null)) {
                     ExpenseEditor(editing, date, currency, busy, failed,
                         onClose = { if (!busy) showEditor = false },
-                        onSave = { entryDate, title, amount, category, note -> save {
-                            repo.saveExpense(editingId, entryDate, title, amount, currency, category, note)
+                        onSave = { entryDate, title, amount, entryCurrency, category, note -> save {
+                            repo.saveExpense(editingId, entryDate, title, amount, entryCurrency, category, note)
                             dateEpoch = entryDate.toEpochDay()
                         } },
                         onDelete = { save { editingId?.let { repo.deleteExpense(it) } } })
                 }
                 budgetMonthly?.let { forMonth ->
-                    BudgetEditor(forMonth, if (forMonth) monthBudget else dayBudget, currency, busy, failed,
+                    val limits = if (forMonth) monthBudget else dayBudget
+                    val editorCurrency = limits.singleOrNull()?.currency ?: currency
+                    val original = limits.singleOrNull()?.amountMinor ?: budgetTotal(limits, conversions)?.let {
+                        it.takeIf { total -> total <= BigDecimal.valueOf(Money.MAX_AMOUNT_MINOR) }?.toLong()
+                    }
+                    if (budgets != null) BudgetEditor(forMonth, limits, original, editorCurrency, busy, failed,
                         onClose = { if (!busy) budgetMonthly = null },
-                        onSave = { amount -> save { repo.saveBudget(date, forMonth, currency, amount) } })
+                        onSave = { amount -> save { repo.saveBudget(date, forMonth, editorCurrency, amount) } })
                 }
             }
         }
     }
-    if (converting) ExchangeRateDialog(app.exchangeRates, currency,
-        if (currency == "CNY") "USD" else "CNY", onClose = { converting = false })
     if (monthPicker) MonthPicker(month, onDismiss = { monthPicker = false }, onSelect = { chosen ->
         dateEpoch = chosen.atDay(minOf(date.dayOfMonth, chosen.lengthOfMonth())).toEpochDay(); monthPicker = false
     })
 }
 
+private fun budgetTotal(limits: List<BudgetEntity>, conversions: Map<String, BigDecimal?>): BigDecimal? {
+    if (limits.isEmpty()) return null
+    return limits.sumOf { convert(it.amountMinor, it.currency, conversions) ?: return null }
+        .setScale(0, RoundingMode.HALF_UP)
+}
+
+private fun convert(amount: Long, currency: String, conversions: Map<String, BigDecimal?>): BigDecimal? =
+    if (amount == 0L) BigDecimal.ZERO else conversions[currency]?.multiply(BigDecimal.valueOf(amount))
+
 @Composable
-private fun BudgetSummary(monthly: Boolean, expenses: List<ExpenseEntity>, budget: BudgetEntity?, currency: String, locale: Locale, onEdit: () -> Unit) {
-    val spent = expenses.sumOf { it.amountMinor }
-    val categoryTotals = expenses.groupBy { it.category.takeIf(expenseCategories::containsKey) ?: "other" }
-        .mapValues { (_, records) -> records.sumOf { it.amountMinor } }
+private fun BudgetSummary(
+    monthly: Boolean, expenses: List<ExpenseEntity>, limits: List<BudgetEntity>, currency: String,
+    conversions: Map<String, BigDecimal?>, locale: Locale, limitsLoaded: Boolean, onEdit: () -> Unit,
+) {
+    val missingSpending = expenses.map { it.currency }.filter { conversions[it] == null }.toSet()
+    val missingLimits = limits.filter { it.amountMinor != 0L && conversions[it.currency] == null }.map { it.currency }.toSet()
+    val categoryTotals = if (missingSpending.isNotEmpty()) emptyMap() else expenses
+        .groupBy { it.category.takeIf(expenseCategories::containsKey) ?: "other" }
+        .mapValues { (_, records) ->
+            records.sumOf { requireNotNull(convert(it.amountMinor, it.currency, conversions)) }
+        }
+    val exactSpent = categoryTotals.values.sumOf { it }
+    val spent = exactSpent.setScale(0, RoundingMode.HALF_UP)
+    val budget = budgetTotal(limits, conversions)
     Card(Modifier.fillMaxWidth().testTag(if (monthly) "monthly-summary" else "daily-summary"),
         colors = CardDefaults.cardColors(containerColor = if (monthly) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(if (monthly) R.string.month_spending else R.string.day_spending), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                TextButton(onClick = onEdit, modifier = Modifier.testTag(if (monthly) "edit-month-budget" else "edit-day-budget")) {
-                    Text(stringResource(if (budget == null) R.string.set_budget else R.string.edit_budget))
+                TextButton(onClick = onEdit, enabled = limitsLoaded,
+                    modifier = Modifier.testTag(if (monthly) "edit-month-budget" else "edit-day-budget")) {
+                    Text(stringResource(if (limits.isEmpty()) R.string.set_budget else R.string.edit_budget))
                 }
             }
             if (!monthly) Text(stringResource(R.string.daily_budget_hint), style = MaterialTheme.typography.bodySmall)
-            Text(Money.format(spent, currency, locale), style = MaterialTheme.typography.headlineMedium)
-            if (budget == null) Text(stringResource(R.string.no_budget), style = MaterialTheme.typography.bodySmall)
-            else {
-                val remaining = budget.amountMinor - spent
-                Text(stringResource(R.string.budget_amount_value, Money.format(budget.amountMinor, currency, locale)), style = MaterialTheme.typography.bodySmall)
-                val barTotal = maxOf(budget.amountMinor, spent)
-                val progress = if (barTotal == 0L) 0f else (spent.toDouble() / barTotal).toFloat()
+            if (missingSpending.isEmpty()) Text(Money.format(spent, currency, locale), Modifier.testTag("budget-spent"),
+                style = MaterialTheme.typography.headlineMedium)
+            val missing = missingSpending + missingLimits
+            if (missing.isNotEmpty()) Text(stringResource(R.string.budget_missing_rates, missing.sorted().joinToString(", ")),
+                modifier = Modifier.testTag("budget-missing-rates"), style = MaterialTheme.typography.bodySmall)
+            if (limitsLoaded && limits.isEmpty()) Text(stringResource(R.string.no_budget), style = MaterialTheme.typography.bodySmall)
+            if (budget != null) Text(stringResource(R.string.budget_amount_value, Money.format(budget, currency, locale)),
+                style = MaterialTheme.typography.bodySmall)
+            if (budget != null && missingSpending.isEmpty()) {
+                val remaining = budget - spent
+                val unused = (budget - exactSpent).max(BigDecimal.ZERO)
+                val barTotal = maxOf(budget, exactSpent)
+                val progress = if (barTotal.signum() == 0) 0f else (exactSpent.toDouble() / barTotal.toDouble()).toFloat()
                 Row(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .testTag(if (monthly) "monthly-budget-bar" else "daily-budget-bar")
                     .semantics { progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f) }) {
                     // Scale an overspent bar to total spending so every category remains visible.
-                    if (barTotal > 0L) {
+                    if (barTotal.signum() > 0) {
                         expenseCategories.keys.forEach { category ->
-                            val amount = categoryTotals[category] ?: 0L
-                            if (amount > 0L) Box(Modifier.weight((amount.toDouble() / barTotal).toFloat())
+                            val amount = categoryTotals[category] ?: BigDecimal.ZERO
+                            if (amount.signum() > 0) Box(Modifier.weight((amount.toDouble() / barTotal.toDouble()).toFloat())
                                 .fillMaxHeight().background(expenseCategoryColor(category)))
                         }
-                        if (remaining > 0L) Spacer(Modifier.weight((remaining.toDouble() / barTotal).toFloat()))
+                        if (unused.signum() > 0) Spacer(Modifier.weight((unused.toDouble() / barTotal.toDouble()).toFloat()))
                     }
                 }
                 expenseCategories.forEach { (category, label) ->
@@ -255,13 +287,13 @@ private fun BudgetSummary(monthly: Boolean, expenses: List<ExpenseEntity>, budge
                             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ExpenseCategoryDot(category)
                             Text(stringResource(label), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                            Text(Money.format(amount, currency, locale), style = MaterialTheme.typography.bodySmall)
+                            Text(Money.format(amount.setScale(0, RoundingMode.HALF_UP), currency, locale), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
-                Text(stringResource(if (remaining < 0) R.string.budget_over else R.string.budget_left,
-                    Money.format(kotlin.math.abs(remaining), currency, locale)),
-                    color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                Text(stringResource(if (remaining.signum() < 0) R.string.budget_over else R.string.budget_left,
+                    Money.format(remaining.abs(), currency, locale)),
+                    color = if (remaining.signum() < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -269,22 +301,24 @@ private fun BudgetSummary(monthly: Boolean, expenses: List<ExpenseEntity>, budge
 }
 
 @Composable
-private fun BudgetEditor(monthly: Boolean, budget: BudgetEntity?, currency: String, busy: Boolean, failed: Boolean,
+private fun BudgetEditor(monthly: Boolean, limits: List<BudgetEntity>, original: Long?, currency: String, busy: Boolean, failed: Boolean,
     onClose: () -> Unit, onSave: (Long?) -> Unit) {
-    var amount by rememberSaveable(monthly, budget?.periodStart, currency) { mutableStateOf(budget?.let { Money.input(it.amountMinor) }.orEmpty()) }
+    var changedAmount by rememberSaveable { mutableStateOf<String?>(null) }
+    val amount = changedAmount ?: original?.let(Money::input).orEmpty()
     val parsed = Money.parseMinor(amount, allowZero = true)
     AlertDialog(onDismissRequest = { if (!busy) onClose() }, modifier = Modifier.semantics { testTagsAsResourceId = true },
         title = { Text(stringResource(if (monthly) R.string.month_budget else R.string.day_budget)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!monthly) Text(stringResource(R.string.daily_budget_hint))
-                OutlinedTextField(amount, { if (it.length <= 16) amount = it }, label = { Text(stringResource(R.string.amount_currency, currency)) },
+                if (limits.size > 1) Text(stringResource(R.string.budget_legacy_combined))
+                OutlinedTextField(amount, { if (it.length <= 16) changedAmount = it }, label = { Text(stringResource(R.string.amount_currency, currency)) },
                     modifier = Modifier.testTag("budget-amount"), singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = amount.isNotBlank() && parsed == null,
                     supportingText = { Text(stringResource(R.string.budget_amount_hint)) })
                 if (failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
-                if (budget != null) TextButton(enabled = !busy, onClick = { onSave(null) }) { Text(stringResource(R.string.remove_budget)) }
+                if (limits.isNotEmpty()) TextButton(enabled = !busy, onClick = { onSave(null) }) { Text(stringResource(R.string.remove_budget)) }
             }
         },
         confirmButton = { TextButton(enabled = parsed != null && !busy, onClick = { parsed?.let(onSave) },
@@ -295,7 +329,7 @@ private fun BudgetEditor(monthly: Boolean, budget: BudgetEntity?, currency: Stri
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, currency: String, busy: Boolean, failed: Boolean,
-    onClose: () -> Unit, onSave: (LocalDate, String, Long, String, String) -> Unit, onDelete: () -> Unit) {
+    onClose: () -> Unit, onSave: (LocalDate, String, Long, String, String, String) -> Unit, onDelete: () -> Unit) {
     var title by rememberSaveable(expense?.id) { mutableStateOf(expense?.title.orEmpty()) }
     var amount by rememberSaveable(expense?.id) { mutableStateOf(expense?.let { Money.input(it.amountMinor) }.orEmpty()) }
     var note by rememberSaveable(expense?.id) { mutableStateOf(expense?.note.orEmpty()) }
@@ -303,7 +337,8 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
     var dateEpoch by rememberSaveable(expense?.id) { mutableLongStateOf((expense?.date ?: selectedDate).toEpochDay()) }
     var categories by remember { mutableStateOf(false) }
     var deleting by rememberSaveable { mutableStateOf(false) }
-    var converting by rememberSaveable { mutableStateOf(false) }
+    var entryCurrency by rememberSaveable(expense?.id) { mutableStateOf(expense?.currency ?: currency) }
+    var currenciesExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val date = LocalDate.ofEpochDay(dateEpoch)
@@ -312,18 +347,28 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
         Scaffold(modifier = Modifier.fillMaxSize().imePadding().semantics { testTagsAsResourceId = true },
             topBar = { PlannerTopBar(stringResource(if (expense == null) R.string.add_expense else R.string.edit_expense), onClose) {
                 TextButton(enabled = !busy && title.isNotBlank() && parsed != null,
-                    onClick = { parsed?.let { onSave(date, title, it, category, note) } }, modifier = Modifier.testTag("save-expense")) {
+                    onClick = { parsed?.let { onSave(date, title, it, entryCurrency, category, note) } }, modifier = Modifier.testTag("save-expense")) {
                     Text(stringResource(R.string.save))
                 }
             } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth().testTag("expense-title"), label = { Text(stringResource(R.string.expense_title)) }, singleLine = true, enabled = !busy)
                 OutlinedTextField(amount, { if (it.length <= 16) amount = it }, Modifier.fillMaxWidth().testTag("expense-amount"),
-                    label = { Text(stringResource(R.string.amount_currency, currency)) }, singleLine = true, enabled = !busy,
+                    label = { Text(stringResource(R.string.amount_currency, entryCurrency)) }, singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = amount.isNotBlank() && parsed == null,
                     supportingText = { Text(stringResource(R.string.expense_amount_hint)) })
-                TextButton(enabled = !busy, onClick = { converting = true }, modifier = Modifier.testTag("expense-convert")) {
-                    Text(stringResource(R.string.exchange_title))
+                if (expense == null) Box {
+                    OutlinedButton(enabled = !busy, onClick = { currenciesExpanded = true }, modifier = Modifier.testTag("expense-currency")) {
+                        Text(stringResource(R.string.expense_currency, entryCurrency))
+                    }
+                    DropdownMenu(currenciesExpanded, { currenciesExpanded = false }) {
+                        Money.currencies.forEach { code ->
+                            DropdownMenuItem(text = { Text(code) }, onClick = {
+                                entryCurrency = code
+                                currenciesExpanded = false
+                            })
+                        }
+                    }
                 }
                 OutlinedButton(enabled = !busy, onClick = {
                     DatePickerDialog(context, { _, y, m, d -> dateEpoch = LocalDate.of(y, m + 1, d).toEpochDay() }, date.year, date.monthValue - 1, date.dayOfMonth).show()
@@ -347,10 +392,6 @@ private fun ExpenseEditor(expense: ExpenseEntity?, selectedDate: LocalDate, curr
                 }
             }
         }
-        if (converting) ExchangeRateDialog(
-            (context.applicationContext as DayTilesApplication).exchangeRates,
-            if (currency == "USD") "CNY" else "USD", currency,
-            onClose = { converting = false }, onUseAmount = { amount = Money.input(it); converting = false })
         if (deleting) AlertDialog(onDismissRequest = { if (!busy) deleting = false },
             title = { Text(stringResource(R.string.delete_expense)) }, text = { Text(stringResource(R.string.delete_expense_confirmation)) },
             confirmButton = { TextButton(enabled = !busy, onClick = onDelete) { Text(stringResource(R.string.delete)) } },

@@ -25,9 +25,12 @@ object Money {
     fun input(minor: Long): String = BigDecimal.valueOf(minor, 2).toPlainString()
 
     fun format(minor: Long, code: String, locale: Locale): String =
+        format(BigDecimal.valueOf(minor), code, locale)
+
+    fun format(minor: BigDecimal, code: String, locale: Locale): String =
         NumberFormat.getCurrencyInstance(locale).apply {
             currency = Currency.getInstance(code)
             minimumFractionDigits = 2
             maximumFractionDigits = 2
-        }.format(BigDecimal.valueOf(minor, 2))
+        }.format(minor.movePointLeft(2))
 }

@@ -79,9 +79,9 @@ Deleting a task moves it to **Recycle Bin** and cancels its pending reminder. It
 
 Open **Expenses & budgets** from the drawer or Me. Record a description, date, amount, category, and optional note. Tap a record to edit or delete it. Daily and Monthly modes show the corresponding expense records and totals; date controls let you review other periods.
 
-Set independent daily and monthly budgets, including a zero-spending budget. The summary shows the amount spent, the budget, and the remaining amount or overrun. Removing a budget keeps its expense records. Currency selection keeps CNY, HKD, TWD, and USD records and budgets separate; changing currency does not convert or relabel existing amounts.
+Set one daily limit for every date and one limit per month. Both support zero. Summaries use reference exchange rates to combine spending across currencies and show the remaining budget or overrun. Expenses keep their original currencies. Previous per-currency limits are converted and added together until you save a single shared limit.
 
-The currency converter on this screen and in the expense editor works without setup. It automatically loads free public reference rates from CFETS and HKMA, caches them for offline use, and can fill the current expense amount. See [exchange rate integration](docs/exchange-rates.en.md) for source dates and publication limits.
+Choose the budget display currency and view, refresh, or try exchange rates under **Settings → Expenses & budgets**. DayTiles loads free official reference rates from CFETS and HKMA as needed and saves them for offline use. [Exchange-rate integration](docs/exchange-rates.en.md)
 
 ### Task organization
 
@@ -145,7 +145,7 @@ app/src/main/java/com/december172/daytiles/
 
 ## Privacy and connectivity
 
-DayTiles works offline. Internet access is used for sticker downloads, loading missing exchange rates or snapshots downloaded at least 24 hours ago when opening the converter, and manual rate refresh. Stickers and cached quotes stay on the device. Rate requests use fixed public official URLs and send no entered amounts or notes; no account or API key is needed. There are no required app accounts, advertisements, analytics, tracking, or cloud sync.
+DayTiles works offline. Internet access is used for sticker downloads, loading exchange rates for budgets and the converter when rates are missing or were downloaded at least 24 hours ago, and manual refresh. Stickers and cached quotes stay on the device. Rate requests use fixed public official URLs and send no entered amounts or notes; no account or API key is needed. There are no required app accounts, advertisements, analytics, tracking, or cloud sync.
 
 ## Credits
 

@@ -36,7 +36,6 @@ internal fun ExchangeRateDialog(
     initialFrom: String,
     initialTo: String,
     onClose: () -> Unit,
-    onUseAmount: ((Long) -> Unit)? = null,
 ) {
     var from by rememberSaveable { mutableStateOf(initialFrom) }
     var to by rememberSaveable { mutableStateOf(initialTo) }
@@ -74,7 +73,7 @@ internal fun ExchangeRateDialog(
                     ExchangeCurrencyPicker(from, R.string.exchange_from, "exchange-from", !busy, Modifier.weight(1f)) {
                         from = it
                     }
-                    ExchangeCurrencyPicker(to, R.string.exchange_to, "exchange-to", !busy && onUseAmount == null, Modifier.weight(1f)) {
+                    ExchangeCurrencyPicker(to, R.string.exchange_to, "exchange-to", !busy, Modifier.weight(1f)) {
                         to = it
                     }
                 }
@@ -120,9 +119,6 @@ internal fun ExchangeRateDialog(
                     }
                     Text(stringResource(if (busy) R.string.exchange_refreshing else R.string.exchange_refresh))
                 }
-                if (onUseAmount != null) Button(enabled = converted != null && converted > 0 && !busy,
-                    modifier = Modifier.fillMaxWidth().testTag("exchange-use-amount"),
-                    onClick = { converted?.let(onUseAmount) }) { Text(stringResource(R.string.exchange_use_amount)) }
                 Text(stringResource(R.string.exchange_reference_hint), style = MaterialTheme.typography.bodySmall)
                 TextButton(enabled = !busy, modifier = Modifier.testTag("exchange-clear-cache"), onClick = {
                     repository.clearCachedRates(); quote = repository.cachedRate(from, to); failed = false

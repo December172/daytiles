@@ -13,7 +13,11 @@
     <string name="save_failed">Could not save the change. Please try again.</string>
     <string name="finance_title">Expenses &amp; budgets</string>
     <string name="finance_monthly">Monthly</string>
-    <string name="finance_currency_hint">Each currency has its own expenses and budgets. No conversion is applied.</string>
+    <string name="finance_currency_hint">Totals combine all currencies using reference rates.</string>
+    <string name="budget_display_currency">Budget display currency</string>
+    <string name="expense_currency">Currency (%1$s)</string>
+    <string name="budget_missing_rates">Rates unavailable for %1$s. Refresh rates in Settings.</string>
+    <string name="budget_legacy_combined">This limit combines previous currency budgets. Saving sets a single limit in the currency shown.</string>
     <string name="previous_period">Previous period</string>
     <string name="next_period">Next period</string>
     <string name="add_expense">Add expense</string>
@@ -32,7 +36,7 @@
     <string name="set_budget">Set budget</string>
     <string name="edit_budget">Edit budget</string>
     <string name="day_budget">Daily budget</string>
-    <string name="daily_budget_hint">The daily limit applies to every day in this currency.</string>
+    <string name="daily_budget_hint">The shared daily limit applies to every day.</string>
     <string name="month_budget">Monthly budget</string>
     <string name="no_budget">No budget set.</string>
     <string name="budget_amount_value">Budget: %1$s</string>

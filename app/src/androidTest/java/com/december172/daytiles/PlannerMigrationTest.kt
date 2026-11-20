@@ -68,10 +68,11 @@ class PlannerMigrationTest {
             assertTrue(db.subtaskDao().forTask(1).single().isCompleted)
             val repo = DayRepository(db)
             assertTrue(repo.observeDeletedTasks().first().isEmpty())
-            assertTrue(repo.observeExpenses(YearMonth.of(2026, 10), "CNY").first().isEmpty())
-            assertTrue(repo.observeBudgets(YearMonth.of(2026, 10), "CNY").first().isEmpty())
+            assertTrue(repo.observeExpenses(YearMonth.of(2026, 10)).first().isEmpty())
+            val budgets = repo.observeBudgets(YearMonth.of(2026, 10)).first()
+            assertTrue(budgets.daily.isEmpty() && budgets.monthly.isEmpty())
             repo.saveExpense(null, LocalDate.of(2026, 10, 26), "New expense", 1250, "CNY", "food", "")
-            assertEquals(1250L, repo.observeExpenses(YearMonth.of(2026, 10), "CNY").first().single().amountMinor)
+            assertEquals(1250L, repo.observeExpenses(YearMonth.of(2026, 10)).first().single().amountMinor)
         } finally { db.close(); context.deleteDatabase(name) }
     }
 }

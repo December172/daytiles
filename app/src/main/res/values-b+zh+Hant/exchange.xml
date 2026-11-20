@@ -16,7 +16,8 @@
     <string name="exchange_refresh_failed">無法重新整理官方匯率，請檢查網絡後再試。已儲存匯率仍可使用。</string>
     <string name="exchange_refresh">重新整理匯率</string>
     <string name="exchange_refreshing">正在取得官方匯率…</string>
-    <string name="exchange_use_amount">使用換算金額</string>
+    <string name="exchange_settings">匯率</string>
+    <string name="exchange_settings_hint">查看或重新整理預算使用的官方匯率，也可換算金額。</string>
     <string name="exchange_reference_hint">僅供估算參考。官方發布可能滯後，尤其是香港金管局月報資料，請核對資料日期。銀行、銀行卡匯率及手續費可能不同；已有記錄和預算仍保留原幣別。</string>
     <string name="exchange_clear_cache">清除已儲存匯率</string>
 </resources>

@@ -2,9 +2,7 @@
 
 [简体中文（默认）](exchange-rates.md) | [English](exchange-rates.en.md)
 
-The finance screen and expense editor offer conversion between CNY, HKD, TWD, and USD. Opening the converter automatically loads public official data. No registration, API key, or configuration is needed. Snapshots downloaded within the last 24 hours are reused; **Refresh rates** forces an update.
-
-Downloaded tables support offline conversion across all covered pairs. The screen separates the official observation date from the local download time and links to the source. **Use converted amount** fills the current expense editor; saving remains a separate action. Its target currency is fixed to that expense’s ledger.
+The budget summary converts expenses and limits to the display currency selected under **Settings → Expenses & budgets**. The **Exchange rates** entry there shows the source, observation date, and local download time, and offers a calculator and manual refresh. The app loads public reference rates as needed for budgets and the calculator. Snapshots downloaded within the last 24 hours are reused.
 
 ## Official sources and research
 
@@ -29,13 +27,13 @@ No commercial service requiring user credentials, bundled shared key, proxy back
 - Separate SharedPreferences snapshots store each source’s entire table, supporting reverse and other pairs offline. When both sources cover a pair, the newer observation wins, with CFETS preferred on equal dates.
 - Automatic requests happen only when a cached quote is absent or its download is at least 24 hours old. Manual refresh bypasses this limit. CFETS failure triggers HKMA fallback. Network or parsing failures preserve the last successful snapshots and show an error.
 - Requests use fixed official URLs and send no entered amounts, expenses, journals, notes, or budgets. There is no background polling. HTTPS requests disable redirects and enforce timeouts and a 128 KiB response limit.
-- Room schema, existing records, budgets, and currency totals are unchanged. **Clear saved rates** removes only exchange rate snapshots.
+- Budget summaries recalculate using the latest available cached reference rates, including for past periods. When a required rate is unavailable, the summary identifies the missing currency and withholds the affected total. Expense rows show the recorded amounts and currencies.
 
 Reference data can be old because of weekends, holidays, bulletin schedules, or endpoint outages. These are personal budgeting estimates, not bank/card settlement prices, and exclude fees. Check the displayed observation date before use.
 
 ## Verification
 
-Automated coverage includes official parsing, rate direction and unit conventions, complete observations, invalid data, first use without configuration, fallback, whole-table caching, daily automatic refresh, forced refresh, offline retention, and applying an amount in the expense editor.
+The initial keyless converter checks covered official parsing, rate direction and units, invalid data, fallback, whole-table caching, automatic and manual refresh, and offline use.
 
 ```shell
 ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk \

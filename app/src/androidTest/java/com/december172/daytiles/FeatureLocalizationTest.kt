@@ -17,8 +17,8 @@ class FeatureLocalizationTest {
             R.string.add_expense, R.string.expense_title, R.string.expense_category, R.string.budget_over,
             R.string.daily_budget_hint, R.string.exchange_title, R.string.exchange_provider,
             R.string.exchange_privacy, R.string.exchange_refresh, R.string.exchange_reference_hint,
-            R.string.exchange_no_rate, R.string.exchange_use_amount, R.string.exchange_source_cfets,
-            R.string.exchange_source_hkma,
+            R.string.exchange_no_rate, R.string.exchange_settings, R.string.exchange_source_cfets,
+            R.string.exchange_source_hkma, R.string.budget_display_currency, R.string.budget_missing_rates,
             R.string.delete_task_confirmation, R.string.empty_bin, R.string.save_failed)
         fun resources(tag: String) = context.createConfigurationContext(Configuration(context.resources.configuration).apply {
             setLocales(LocaleList.forLanguageTags(tag))
