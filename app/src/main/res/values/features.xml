@@ -32,6 +32,7 @@
     <string name="set_budget">Set budget</string>
     <string name="edit_budget">Edit budget</string>
     <string name="day_budget">Daily budget</string>
+    <string name="daily_budget_hint">The daily limit applies to every day in this currency.</string>
     <string name="month_budget">Monthly budget</string>
     <string name="no_budget">No budget set.</string>
     <string name="budget_amount_value">Budget: %1$s</string>

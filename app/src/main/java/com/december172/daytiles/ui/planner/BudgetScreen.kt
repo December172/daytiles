@@ -151,7 +151,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                 val budgets by remember { repo.observeBudgets(month, currency) }.collectAsStateWithLifecycle(emptyList())
                 val dayExpenses = expenses.filter { it.date == date }
                 val monthBudget = budgets.firstOrNull { it.periodType == "MONTH" }
-                val dayBudget = budgets.firstOrNull { it.periodType == "DAY" && it.periodStart == date }
+                val dayBudget = budgets.firstOrNull { it.periodType == "DAY" || it.periodType == "DAILY" }
                 val shown = if (monthly) expenses else dayExpenses
                 LazyColumn(Modifier.weight(1f).testTag("expense-list"), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -220,6 +220,7 @@ private fun BudgetSummary(monthly: Boolean, expenses: List<ExpenseEntity>, budge
                     Text(stringResource(if (budget == null) R.string.set_budget else R.string.edit_budget))
                 }
             }
+            if (!monthly) Text(stringResource(R.string.daily_budget_hint), style = MaterialTheme.typography.bodySmall)
             Text(Money.format(spent, currency, locale), style = MaterialTheme.typography.headlineMedium)
             if (budget == null) Text(stringResource(R.string.no_budget), style = MaterialTheme.typography.bodySmall)
             else {
@@ -270,6 +271,7 @@ private fun BudgetEditor(monthly: Boolean, budget: BudgetEntity?, currency: Stri
         title = { Text(stringResource(if (monthly) R.string.month_budget else R.string.day_budget)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!monthly) Text(stringResource(R.string.daily_budget_hint))
                 OutlinedTextField(amount, { if (it.length <= 16) amount = it }, label = { Text(stringResource(R.string.amount_currency, currency)) },
                     modifier = Modifier.testTag("budget-amount"), singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

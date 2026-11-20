@@ -32,6 +32,7 @@
     <string name="set_budget">設定預算</string>
     <string name="edit_budget">編輯預算</string>
     <string name="day_budget">每日預算</string>
+    <string name="daily_budget_hint">此幣種的每日預算上限適用於每一天。</string>
     <string name="month_budget">月度預算</string>
     <string name="no_budget">尚未設定預算。</string>
     <string name="budget_amount_value">預算：%1$s</string>

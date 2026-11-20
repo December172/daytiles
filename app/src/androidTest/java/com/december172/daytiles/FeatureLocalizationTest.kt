@@ -15,6 +15,7 @@ class FeatureLocalizationTest {
         val ids = listOf(R.string.full_schedule_title, R.string.recycle_bin_title, R.string.finance_title,
             R.string.restore_task, R.string.delete_forever, R.string.day_budget, R.string.month_budget,
             R.string.add_expense, R.string.expense_title, R.string.expense_category, R.string.budget_over,
+            R.string.daily_budget_hint,
             R.string.delete_task_confirmation, R.string.empty_bin, R.string.save_failed)
         fun resources(tag: String) = context.createConfigurationContext(Configuration(context.resources.configuration).apply {
             setLocales(LocaleList.forLanguageTags(tag))

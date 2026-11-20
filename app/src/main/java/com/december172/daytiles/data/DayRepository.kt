@@ -29,6 +29,7 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -84,8 +85,10 @@ class DayRepository(
     fun observeExpenses(month: YearMonth, currency: String) =
         financeDao.observeExpenses(month.atDay(1), month.atEndOfMonth(), currency)
 
-    fun observeBudgets(month: YearMonth, currency: String) =
-        financeDao.observeBudgets(month.atDay(1), month.atEndOfMonth(), currency)
+    fun observeBudgets(month: YearMonth, currency: String) = combine(
+        financeDao.observeBudgets(month.atDay(1), month.atEndOfMonth(), currency),
+        financeDao.observeDailyBudget(currency),
+    ) { monthly, daily -> monthly + listOfNotNull(daily) }
 
     suspend fun saveExpense(
         id: Long?, date: LocalDate, title: String, amountMinor: Long,
@@ -110,10 +113,13 @@ class DayRepository(
 
     suspend fun saveBudget(date: LocalDate, monthly: Boolean, currency: String, amountMinor: Long?) {
         require(currency in Money.currencies)
-        val start = if (monthly) date.withDayOfMonth(1) else date
-        val type = if (monthly) "MONTH" else "DAY"
-        if (amountMinor == null) financeDao.deleteBudget(start, type, currency)
-        else {
+        // DAILY is a shared setting; its fixed key is independent of the selected date.
+        val start = if (monthly) date.withDayOfMonth(1) else LocalDate.ofEpochDay(0)
+        val type = if (monthly) "MONTH" else "DAILY"
+        if (amountMinor == null) {
+            if (monthly) financeDao.deleteBudget(start, type, currency)
+            else financeDao.deleteDailyBudget(currency)
+        } else {
             require(amountMinor in 0..Money.MAX_AMOUNT_MINOR)
             financeDao.saveBudget(BudgetEntity(start, type, currency, amountMinor, System.currentTimeMillis()))
         }

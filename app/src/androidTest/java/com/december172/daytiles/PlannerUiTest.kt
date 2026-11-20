@@ -13,6 +13,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.december172.daytiles.data.local.DayTilesDatabase
+import com.december172.daytiles.domain.model.Money
 import java.io.File
 import java.time.LocalDate
 import java.time.YearMonth
@@ -273,7 +274,48 @@ class PlannerUiTest {
         assertTrue(find(By.textStartsWith(overPrefix)).text.contains("0.01"))
         scrollTo(By.res("edit-day-budget"), "expense-list").click()
         click(R.string.remove_budget)
-        await { runBlocking { repo.observeBudgets(YearMonth.from(today), "CNY").first().none { it.periodType == "DAY" } } }
+        await { runBlocking { db.financeDao().observeDailyBudget("CNY").first() == null } }
+    }
+
+    @Test fun dailyBudgetAppliesToEveryDateAndEditsAndRemovalAreGlobal() = runBlocking<Unit> {
+        val previousDay = today.minusDays(1)
+        val previousMonth = today.minusMonths(1)
+        expenses += repo.saveExpense(null, today, "UI daily lunch", 1250, "CNY", "food", "")
+        expenses += repo.saveExpense(null, previousDay, "UI yesterday bus", 250, "CNY", "transport", "")
+        expenses += repo.saveExpense(null, previousMonth, "UI previous month", 500, "CNY", "shopping", "")
+        repo.saveBudget(today, false, "CNY", 1000)
+        repo.saveBudget(today, true, "CNY", 100000)
+        fun money(amount: Long) = Money.format(amount, "CNY", context.resources.configuration.locales[0])
+        fun assertDaily(spent: Long, limit: Long) {
+            find(By.res("daily-summary").hasDescendant(By.text(money(spent))))
+            find(By.res("daily-summary").hasDescendant(By.text(context.getString(R.string.budget_amount_value, money(limit)))))
+            find(By.res("daily-summary").hasDescendant(By.text(context.getString(
+                if (spent > limit) R.string.budget_over else R.string.budget_left, money(kotlin.math.abs(limit - spent))))))
+        }
+        openFeature(R.string.finance_title, "expense-list")
+        currency("CNY")
+        assertDaily(1250, 1000)
+        find(By.res("finance-previous")).click()
+        assertDaily(250, 1000)
+        budget("edit-day-budget", "20.00")
+        assertDaily(250, 2000)
+        find(By.res("finance-next")).click()
+        assertDaily(1250, 2000)
+        capture("shared-daily-budget-current")
+        click(R.string.finance_monthly)
+        find(By.res("finance-previous")).click()
+        click(R.string.daily_goal)
+        assertDaily(500, 2000)
+        capture("shared-daily-budget-previous-month")
+        find(By.res("edit-day-budget")).click()
+        find(By.text(text(R.string.daily_budget_hint)))
+        click(R.string.remove_budget)
+        find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
+        click(R.string.today)
+        find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
+        assertEquals(100000L, repo.observeBudgets(YearMonth.from(today), "CNY").first().single().amountMinor)
+        currency("HKD")
+        find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
     }
 
     @Test fun budgetBarsShowCategoryColorsAndProportions() = runBlocking<Unit> {

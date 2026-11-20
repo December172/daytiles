@@ -10,6 +10,8 @@ The drawer and Me page now provide three additional planning destinations.
 
 Money uses integer minor units with exact decimal parsing. Inputs with excess decimal places, nonpositive expense amounts, and out-of-range amounts are rejected. Zero budgets are supported. CNY, HKD, TWD, and USD are separate ledgers; changing the selected currency does not convert existing amounts.
 
+The daily budget is one shared limit per currency, applied to every date across all months. Each day compares its own spending with that limit. Editing or removing the daily budget from any date affects every date; monthly budgets remain specific to each month. For existing date-specific daily budgets, the most recently edited value becomes the shared default and the original records remain stored. Removing the daily budget also clears that currency's old daily budgets so an older value cannot reappear.
+
 ## Persistence
 
 Room schema 9 adds a nullable deletion timestamp to tasks and introduces separate expense and budget tables. Existing journal, task, sticker, subtask, target, and course records are retained. Active task queries exclude recycled tasks, including calendar views, targets, tags, focus choices, and widgets.
