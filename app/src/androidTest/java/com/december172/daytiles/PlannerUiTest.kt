@@ -22,6 +22,8 @@ import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -308,6 +310,59 @@ class PlannerUiTest {
         click(R.string.today)
         find(By.res("daily-summary").hasDescendant(By.text(text(R.string.no_budget))))
         assertEquals(100000L, repo.observeBudgets(YearMonth.from(today)).first().monthly.single().amountMinor)
+    }
+
+    @Test fun categoryViewShowsTheWholeMonthAndCanFilterAndEditExpenses() = runBlocking<Unit> {
+        val month = YearMonth.from(today)
+        val otherDay = month.atDay(if (today.dayOfMonth == 1) 2 else 1)
+        val previousMonth = today.minusMonths(1)
+        val rent = repo.saveExpense(null, today, "Fixture rent", 126000, "CNY", "housing", "")
+        val repair = repo.saveExpense(null, otherDay, "Fixture repair", 28000, "HKD", "housing", "")
+        val checkup = repo.saveExpense(null, today, "Fixture checkup", 40000, "CNY", "health", "")
+        val oldRent = repo.saveExpense(null, previousMonth, "Fixture previous rent", 124000, "CNY", "housing", "")
+        expenses += listOf(rent, repair, checkup, oldRent)
+
+        openFeature(R.string.finance_title, "expense-list")
+        assertNull(device.findObject(By.res("expense-$repair")))
+        find(By.res("expenses-by-category")).click()
+        find(By.res("category-expense-list"))
+        find(By.text(text(R.string.category_housing)))
+        find(By.res("expense-$rent"))
+        val locale = context.resources.configuration.locales[0]
+        val expectedDate = otherDay.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
+        find(By.res("expense-$repair"))
+        find(By.text(expectedDate))
+        find(By.text(Money.format(28000, "HKD", locale)))
+        scrollTo(By.text(text(R.string.category_health)), "category-expense-list")
+        scrollTo(By.res("expense-$checkup"), "category-expense-list")
+        assertNull(device.findObject(By.res("expense-$oldRent")))
+        capture("monthly-expenses-by-category")
+
+        fun filter(label: Int) {
+            find(By.res("expense-category-filter")).click()
+            // The open menu is a popup. The category heading can also have this label.
+            device.wait(Until.hasObject(By.text(text(label))), 5_000)
+            device.findObjects(By.text(text(label))).last().click()
+        }
+        filter(R.string.category_housing)
+        find(By.res("expense-$rent"))
+        find(By.res("expense-$repair"))
+        assertTrue(device.wait(Until.gone(By.res("expense-$checkup")), 5_000))
+        find(By.res("expense-$repair")).click()
+        find(By.res("expense-amount").text("280.00"))
+        setText("expense-title", "Fixture repaired housing")
+        find(By.res("save-expense").enabled(true)).click()
+        find(By.text("Fixture repaired housing"))
+        assertEquals("HKD", db.financeDao().findExpense(repair)?.currency)
+        assertEquals(28000L, db.financeDao().findExpense(repair)?.amountMinor)
+        find(By.res("finance-previous")).click()
+        find(By.res("expense-$oldRent"))
+        assertTrue(device.wait(Until.gone(By.res("expense-$rent")), 5_000))
+        filter(R.string.category_health)
+        find(By.text(text(R.string.no_expenses)))
+        find(By.res("finance-next")).click()
+        find(By.res("expense-$checkup"))
+        assertTrue(device.wait(Until.gone(By.res("expense-$rent")), 5_000))
     }
 
     @Test fun budgetBarsShowCategoryColorsAndProportions() = runBlocking<Unit> {

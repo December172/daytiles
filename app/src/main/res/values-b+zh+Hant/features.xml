@@ -13,6 +13,8 @@
     <string name="save_failed">未能儲存更改，請重試。</string>
     <string name="finance_title">記帳與預算</string>
     <string name="finance_monthly">每月</string>
+    <string name="expenses_by_category">按分類</string>
+    <string name="all_expense_categories">全部分類</string>
     <string name="finance_currency_hint">按參考匯率加總各幣別的金額。</string>
     <string name="budget_display_currency">預算顯示幣別</string>
     <string name="expense_currency">幣別（%1$s）</string>

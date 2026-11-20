@@ -77,7 +77,7 @@ Deleting a task moves it to **Recycle Bin** and cancels its pending reminder. It
 
 ### Expenses and budgets
 
-Open **Expenses & budgets** from the drawer or Me. Record a description, date, amount, category, and optional note. Tap a record to edit or delete it. Daily and Monthly modes show the corresponding expense records and totals; date controls let you review other periods.
+Open **Expenses & budgets** from the drawer or Me. Record a description, date, amount, category, and optional note. Daily and Monthly modes show the corresponding expense records and totals; date controls let you review other periods. **By category** lists every expense in the selected month grouped by category and can filter to one category, such as Housing or Health. Tap an expense to edit or delete it.
 
 Set one daily limit for every date and one limit per month. Both support zero. Summaries use reference exchange rates to combine spending across currencies and show the remaining budget or overrun. Expenses keep their original currencies. Previous per-currency limits are converted and added together until you save a single shared limit.
 

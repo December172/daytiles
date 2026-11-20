@@ -2,7 +2,7 @@ package com.december172.daytiles.ui.planner
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -64,8 +65,13 @@ private val expenseCategoryColors = mapOf(
     "leisure" to Color(0xFFC28B00), "other" to Color(0xFF7A7A7A),
 )
 
+private enum class ExpenseView { Daily, Monthly, ByCategory }
+
+private fun expenseCategoryKey(category: String): String =
+    category.takeIf(expenseCategories::containsKey) ?: "other"
+
 private fun expenseCategoryColor(category: String): Color =
-    expenseCategoryColors.getValue(category.takeIf { it in expenseCategoryColors } ?: "other")
+    expenseCategoryColors.getValue(expenseCategoryKey(category))
 
 @Composable
 private fun ExpenseCategoryDot(category: String) {
@@ -79,7 +85,10 @@ fun BudgetScreen(onBack: () -> Unit) {
     val repo = app.repository
     val currency by app.settings.budgetDisplayCurrency.collectAsStateWithLifecycle()
     var dateEpoch by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
-    var monthly by rememberSaveable { mutableStateOf(false) }
+    var view by rememberSaveable { mutableStateOf(ExpenseView.Daily) }
+    var categoryFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    val byCategory = view == ExpenseView.ByCategory
+    val byMonth = view != ExpenseView.Daily
     var monthPicker by rememberSaveable { mutableStateOf(false) }
     var showEditor by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -118,31 +127,34 @@ fun BudgetScreen(onBack: () -> Unit) {
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilterChip(!monthly, { monthly = false }, label = { Text(stringResource(R.string.daily_goal)) })
-                Spacer(Modifier.width(8.dp))
-                FilterChip(monthly, { monthly = true }, label = { Text(stringResource(R.string.finance_monthly)) })
-                Spacer(Modifier.weight(1f))
-                Text(currency, style = MaterialTheme.typography.labelLarge)
+                Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(view == ExpenseView.Daily, { view = ExpenseView.Daily }, label = { Text(stringResource(R.string.daily_goal)) })
+                    FilterChip(view == ExpenseView.Monthly, { view = ExpenseView.Monthly }, label = { Text(stringResource(R.string.finance_monthly)) })
+                    FilterChip(byCategory, { view = ExpenseView.ByCategory }, label = { Text(stringResource(R.string.expenses_by_category)) },
+                        modifier = Modifier.testTag("expenses-by-category"))
+                }
+                if (!byCategory) Text(currency, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { dateEpoch = (if (monthly) date.minusMonths(1) else date.minusDays(1)).toEpochDay() },
+                IconButton(onClick = { dateEpoch = (if (byMonth) date.minusMonths(1) else date.minusDays(1)).toEpochDay() },
                     modifier = Modifier.testTag("finance-previous")) {
                     Icon(painterResource(R.drawable.ic_planner_chevron_left), stringResource(R.string.previous_period))
                 }
                 TextButton(onClick = {
-                    if (monthly) monthPicker = true
+                    if (byMonth) monthPicker = true
                     else DatePickerDialog(context, { _, y, m, d -> dateEpoch = LocalDate.of(y, m + 1, d).toEpochDay() },
                         date.year, date.monthValue - 1, date.dayOfMonth).show()
                 }, modifier = Modifier.weight(1f).testTag("finance-date")) {
-                    Text(if (monthly) month.format(DateTimeFormatter.ofPattern(if (locale.language == "zh") "yyyy年M月" else "MMMM yyyy", locale))
+                    Text(if (byMonth) month.format(DateTimeFormatter.ofPattern(if (locale.language == "zh") "yyyy年M月" else "MMMM yyyy", locale))
                         else date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)))
                 }
                 TextButton(onClick = { dateEpoch = LocalDate.now().toEpochDay() }) { Text(stringResource(R.string.today)) }
-                IconButton(onClick = { dateEpoch = (if (monthly) date.plusMonths(1) else date.plusDays(1)).toEpochDay() },
+                IconButton(onClick = { dateEpoch = (if (byMonth) date.plusMonths(1) else date.plusDays(1)).toEpochDay() },
                     modifier = Modifier.testTag("finance-next")) {
                     Icon(painterResource(R.drawable.ic_planner_chevron_right), stringResource(R.string.next_period))
                 }
             }
+            if (byCategory) ExpenseCategoryFilter(categoryFilter) { categoryFilter = it }
             key(month) {
                 val expenseRows by remember { repo.observeExpenses(month) }.collectAsStateWithLifecycle(null)
                 val budgets by remember { repo.observeBudgets(month) }.collectAsStateWithLifecycle(null)
@@ -156,13 +168,44 @@ fun BudgetScreen(onBack: () -> Unit) {
                         (monthBudget + dayBudget).filter { it.amountMinor != 0L }.forEach { add(it.currency) }
                     }
                 }
-                if (expenseRows != null && budgets != null) {
+                if (!byCategory && expenseRows != null && budgets != null) {
                     LaunchedEffect(rates, currencies, currency) { rates.refreshForBudget(currencies, currency) }
                 }
-                val shown = if (monthly) expenses else dayExpenses
-                LazyColumn(Modifier.weight(1f).testTag("expense-list"), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
+                val shown = if (byMonth) expenses else dayExpenses
+                val openExpense: (ExpenseEntity) -> Unit = { expense ->
+                    editingId = expense.id
+                    failed = false
+                    showEditor = true
+                }
+                if (byCategory) {
+                    val groups = remember(expenses) { expenses.groupBy { expenseCategoryKey(it.category) } }
+                    val categories = categoryFilter?.let(::listOf) ?: expenseCategories.keys.toList()
+                    key(categoryFilter) {
+                        LazyColumn(Modifier.weight(1f).testTag("category-expense-list"),
+                            contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (expenseRows != null && categories.none { it in groups }) item {
+                                FeatureEmptyState(stringResource(R.string.no_expenses))
+                            }
+                            categories.forEach { category ->
+                                val records = groups[category] ?: return@forEach
+                                item(key = "category-$category") {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        ExpenseCategoryDot(category)
+                                        Text(stringResource(expenseCategories.getValue(category)), style = MaterialTheme.typography.titleSmall,
+                                            modifier = Modifier.semantics { heading() })
+                                    }
+                                }
+                                items(records, key = ExpenseEntity::id) { expense ->
+                                    ExpenseCard(expense, expense.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)),
+                                        locale, openExpense)
+                                }
+                            }
+                        }
+                    }
+                } else LazyColumn(Modifier.weight(1f).testTag("expense-list"), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!monthly) item {
+                    if (!byMonth) item {
                         BudgetSummary(false, dayExpenses, dayBudget, currency, conversions, locale, budgets != null) {
                             failed = false; budgetMonthly = false
                         }
@@ -174,19 +217,13 @@ fun BudgetScreen(onBack: () -> Unit) {
                     }
                     if (shown.isEmpty()) item { FeatureEmptyState(stringResource(R.string.no_expenses)) }
                     shown.groupBy { it.date }.forEach { (day, records) ->
-                        if (monthly) item(key = "date-$day") {
+                        if (byMonth) item(key = "date-$day") {
                             Text(day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)),
                                 style = MaterialTheme.typography.titleSmall)
                         }
                         items(records, key = ExpenseEntity::id) { expense ->
-                            OutlinedCard(Modifier.fillMaxWidth().testTag("expense-${expense.id}").clickable {
-                                editingId = expense.id; failed = false; showEditor = true
-                            }) {
-                                ListItem(headlineContent = { Text(expense.title) },
-                                    leadingContent = { ExpenseCategoryDot(expense.category) },
-                                    supportingContent = { Text(stringResource(expenseCategories[expense.category] ?: R.string.category_other)) },
-                                    trailingContent = { Text(Money.format(expense.amountMinor, expense.currency, locale), style = MaterialTheme.typography.titleSmall) })
-                            }
+                            val label = stringResource(expenseCategories.getValue(expenseCategoryKey(expense.category)))
+                            ExpenseCard(expense, label, locale, openExpense)
                         }
                     }
                 }
@@ -218,6 +255,46 @@ fun BudgetScreen(onBack: () -> Unit) {
     })
 }
 
+@Composable
+private fun ExpenseCategoryFilter(selected: String?, onSelect: (String?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = selected?.let(expenseCategories::getValue) ?: R.string.all_expense_categories
+    Box(Modifier.padding(horizontal = 16.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().testTag("expense-category-filter")) {
+            Text(stringResource(label), Modifier.weight(1f))
+            Icon(painterResource(R.drawable.ic_planner_chevron_down), contentDescription = null)
+        }
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.all_expense_categories)) }, onClick = {
+                onSelect(null)
+                expanded = false
+            })
+            expenseCategories.forEach { (category, title) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(title)) },
+                    leadingIcon = { ExpenseCategoryDot(category) },
+                    onClick = {
+                        onSelect(category)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpenseCard(expense: ExpenseEntity, subtitle: String, locale: Locale, onOpen: (ExpenseEntity) -> Unit) {
+    OutlinedCard(onClick = { onOpen(expense) }, modifier = Modifier.fillMaxWidth().testTag("expense-${expense.id}")) {
+        ListItem(
+            headlineContent = { Text(expense.title) },
+            leadingContent = { ExpenseCategoryDot(expense.category) },
+            supportingContent = { Text(subtitle) },
+            trailingContent = { Text(Money.format(expense.amountMinor, expense.currency, locale), style = MaterialTheme.typography.titleSmall) },
+        )
+    }
+}
+
 private fun budgetTotal(limits: List<BudgetEntity>, conversions: Map<String, BigDecimal?>): BigDecimal? {
     if (limits.isEmpty()) return null
     return limits.sumOf { convert(it.amountMinor, it.currency, conversions) ?: return null }
@@ -235,7 +312,7 @@ private fun BudgetSummary(
     val missingSpending = expenses.map { it.currency }.filter { conversions[it] == null }.toSet()
     val missingLimits = limits.filter { it.amountMinor != 0L && conversions[it.currency] == null }.map { it.currency }.toSet()
     val categoryTotals = if (missingSpending.isNotEmpty()) emptyMap() else expenses
-        .groupBy { it.category.takeIf(expenseCategories::containsKey) ?: "other" }
+        .groupBy { expenseCategoryKey(it.category) }
         .mapValues { (_, records) ->
             records.sumOf { requireNotNull(convert(it.amountMinor, it.currency, conversions)) }
         }

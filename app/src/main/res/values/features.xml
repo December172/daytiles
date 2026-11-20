@@ -13,6 +13,8 @@
     <string name="save_failed">Could not save the change. Please try again.</string>
     <string name="finance_title">Expenses &amp; budgets</string>
     <string name="finance_monthly">Monthly</string>
+    <string name="expenses_by_category">By category</string>
+    <string name="all_expense_categories">All categories</string>
     <string name="finance_currency_hint">Totals combine all currencies using reference rates.</string>
     <string name="budget_display_currency">Budget display currency</string>
     <string name="expense_currency">Currency (%1$s)</string>

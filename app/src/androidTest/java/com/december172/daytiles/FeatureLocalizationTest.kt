@@ -15,6 +15,7 @@ class FeatureLocalizationTest {
         val ids = listOf(R.string.full_schedule_title, R.string.recycle_bin_title, R.string.finance_title,
             R.string.restore_task, R.string.delete_forever, R.string.day_budget, R.string.month_budget,
             R.string.add_expense, R.string.expense_title, R.string.expense_category, R.string.budget_over,
+            R.string.expenses_by_category, R.string.all_expense_categories,
             R.string.daily_budget_hint, R.string.exchange_title, R.string.exchange_provider,
             R.string.exchange_privacy, R.string.exchange_refresh, R.string.exchange_reference_hint,
             R.string.exchange_no_rate, R.string.exchange_settings, R.string.exchange_source_cfets,
